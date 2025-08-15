@@ -238,7 +238,7 @@ const Dashboard = () => {
             Data Tools for Sustainability Dashboard
           </h1>
           <p className="text-gray-600 text-lg mb-4">
-            Interactive CO₂ Emissions & Climate Analysis Platform
+            Interactive CO2 Emissions & Climate Analysis Platform
           </p>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto">
             <p className="text-blue-800 text-sm">
@@ -265,7 +265,7 @@ const Dashboard = () => {
                 unit="°C" 
               />
               <StreamlitMetric 
-                label="CO₂ Emissions" 
+                label="CO2 Emissions" 
                 value="2.1M" 
                 delta={15.3}
                 unit="tonnes" 
@@ -288,7 +288,7 @@ const Dashboard = () => {
               <h3 className="text-lg font-semibold mb-4">📐 Climate Model Equation</h3>
               <div className="bg-gray-50 p-4 rounded-lg text-center">
                 <div className="text-lg font-mono">
-                  Temperature = β₀ + β₁ × CO₂ + β₂ × GDP + ε
+                  Temperature = β₀ + β₁ × CO2 + β₂ × GDP + ε
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
                   Linear relationship between temperature rise, emissions, and economic factors
@@ -299,7 +299,7 @@ const Dashboard = () => {
             {/* Interactive Chart with Country Highlighting */}
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <h3 className="text-lg font-semibold mb-4">
-                CO₂ Emissions Over Time - {selectedCountry} Focus
+                CO2 Emissions Over Time - {selectedCountry} Focus
               </h3>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart>
@@ -343,7 +343,7 @@ const Dashboard = () => {
             {selectedMetrics.includes('CO2') && selectedMetrics.includes('Temperature') && (
               <div className="bg-white p-6 rounded-lg border border-gray-200">
                 <h3 className="text-lg font-semibold mb-4">
-                  🔗 Temperature vs CO₂ Correlation - {selectedCountry}
+                  🔗 Temperature vs CO2 Correlation - {selectedCountry}
                 </h3>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <ResponsiveContainer width="100%" height={300}>
@@ -407,7 +407,7 @@ const Dashboard = () => {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="CO2PerCapita" fill="#ef4444" name="CO₂ Per Capita (tons)" />
+                  <Bar dataKey="CO2PerCapita" fill="#ef4444" name="CO2 Per Capita (tons)" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
