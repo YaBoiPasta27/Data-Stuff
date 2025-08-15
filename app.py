@@ -432,11 +432,11 @@ fig_regional = px.bar(
     color_continuous_scale='Reds'
 )
 
-fig_regional.update_xaxis(tickangle=45)
 fig_regional.update_layout(
     height=400,
     plot_bgcolor='white',
-    paper_bgcolor='white'
+    paper_bgcolor='white',
+    xaxis={'tickangle': 45}
 )
 
 st.plotly_chart(fig_regional, use_container_width=True)
