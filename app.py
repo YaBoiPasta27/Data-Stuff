@@ -1,463 +1,412 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, BarChart, Bar, Cell, AreaChart, Area } from 'recharts';
-import { TrendingUp, Globe, Thermometer, BarChart3, Map, Calculator, Upload, Download, Play, Pause } from 'lucide-react';
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import time
 
-const Dashboard = () => {
-  const [selectedCountry, setSelectedCountry] = useState('India');
-  const [selectedRegion, setSelectedRegion] = useState('South Asia');
-  const [showLogScale, setShowLogScale] = useState(false);
-  const [selectedMetrics, setSelectedMetrics] = useState(['CO2', 'Temperature']);
-  const [yearRange, setYearRange] = useState([1980, 2014]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentYear, setCurrentYear] = useState(1980);
+# Page configuration
+st.set_page_config(
+    page_title="CO2 Emissions Dashboard",
+    page_icon="🌍",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-  // Data generation functions based on your analysis
-  const generateEmissionsData = () => {
-    const countries = ['India', 'China', 'United States', 'Russia', 'Japan', 'Germany', 'Iran', 'South Korea', 'Saudi Arabia', 'Canada'];
-    const data = [];
+# Custom CSS
+st.markdown("""
+<style>
+    .main-header {
+        text-align: center;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+    .metric-card {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid #dee2e6;
+        text-align: center;
+    }
+    .code-block {
+        background-color: #1e1e1e;
+        color: #d4d4d4;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        font-family: 'Courier New', monospace;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Data generation functions
+@st.cache_data
+def generate_emissions_data():
+    """Generate CO2 emissions data for multiple countries"""
+    countries = ['India', 'China', 'United States', 'Russia', 'Japan', 
+                'Germany', 'Iran', 'South Korea', 'Saudi Arabia', 'Canada']
+    data = []
     
-    for (let year = 1900; year <= 2020; year++) {
-      countries.forEach(country => {
-        let baseValue = Math.random() * 500000;
-        if (country === 'China') baseValue *= 12;
-        if (country === 'United States') baseValue *= 10;
-        if (country === 'India') baseValue *= 6;
+    np.random.seed(42)  # For reproducible results
+    
+    for year in range(1980, 2015):
+        for idx, country in enumerate(countries):
+            base_value = 500000 + idx * 200000
+            if country == 'China':
+                base_value = 8000000
+            elif country == 'United States':
+                base_value = 5000000
+            elif country == 'India':
+                base_value = 2000000
+            
+            growth_factor = 1 + (year - 1980) * 0.02
+            noise = np.random.normal(1, 0.1)
+            value = int(base_value * growth_factor * noise)
+            
+            data.append({
+                'country': country,
+                'year': year,
+                'value': max(10000, value),
+                'log_value': np.log10(max(10000, value))
+            })
+    
+    return pd.DataFrame(data)
+
+@st.cache_data
+def generate_temperature_data():
+    """Generate temperature data for India"""
+    data = []
+    np.random.seed(42)
+    
+    for year in range(1980, 2015):
+        temp = 25.2 + (year - 1980) * 0.04 + np.sin((year - 1980) * 0.3) * 0.8 + np.random.normal(0, 0.3)
+        emissions = 800000 + (year - 1980) * 45000 + np.random.normal(0, 150000)
         
-        const growthFactor = Math.pow(1.025, year - 1950);
-        const value = baseValue * growthFactor * (1 + Math.sin((year - 1950) / 10) * 0.1);
+        data.append({
+            'year': year,
+            'temperature': round(temp, 2),
+            'emissions': max(500000, int(emissions)),
+            'scaled_temp': (temp - 25.5) / 1.2,
+            'scaled_emissions': (emissions - 1600000) / 600000
+        })
+    
+    return pd.DataFrame(data)
+
+@st.cache_data
+def generate_regional_data():
+    """Generate regional CO2 data"""
+    regions = [
+        'South Asia', 'East Asia and Pacific', 'Europe and Central Asia',
+        'North America', 'Middle East and North Africa', 'Sub-Saharan Africa',
+        'Latin America and Caribbean'
+    ]
+    
+    data = []
+    values = [1.8, 7.2, 6.8, 15.5, 8.9, 0.8, 3.1]
+    emissions = [2500000, 15000000, 4200000, 6800000, 2100000, 800000, 1500000]
+    
+    for i, region in enumerate(regions):
+        data.append({
+            'region': region,
+            'co2_per_capita': values[i],
+            'total_emissions': emissions[i]
+        })
+    
+    return pd.DataFrame(data)
+
+# Load data
+df_emissions = generate_emissions_data()
+df_temperature = generate_temperature_data()
+df_regional = generate_regional_data()
+
+# Main header
+st.markdown("""
+<div class="main-header">
+    <h1>CO2 Emissions and Climate Analysis Dashboard</h1>
+    <p style="font-size: 1.2em; color: #666;">
+        Interactive Analysis Platform for Sustainability Data
+    </p>
+    <div style="background-color: #e3f2fd; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+        <strong>Purpose:</strong> Monitor environmental metrics and provide data access for climate analysis
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Sidebar controls
+st.sidebar.header("Interactive Controls")
+
+# Country selection
+selected_country = st.sidebar.selectbox(
+    "Select Country",
+    options=['India', 'China', 'United States', 'Russia', 'Japan', 
+            'Germany', 'Iran', 'South Korea', 'Saudi Arabia', 'Canada'],
+    index=0
+)
+
+# Metrics selection
+selected_metrics = st.sidebar.multiselect(
+    "Select Metrics",
+    options=['CO2', 'Temperature', 'GDP', 'Population'],
+    default=['CO2', 'Temperature']
+)
+
+# Log scale toggle
+show_log_scale = st.sidebar.checkbox("Use Log Scale")
+
+# Year range
+year_range = st.sidebar.slider(
+    "Year Range",
+    min_value=1980,
+    max_value=2014,
+    value=(1980, 2014),
+    step=1
+)
+
+# Animation controls
+st.sidebar.subheader("Animation Controls")
+if st.sidebar.button("Play Animation"):
+    # Placeholder for animation - in actual Streamlit, you'd use st.empty() and update it
+    st.sidebar.info("Animation would cycle through years here")
+
+current_year = st.sidebar.slider("Current Year", 1980, 2014, 2000)
+
+# Main content area
+# Metrics row
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.markdown("""
+    <div class="metric-card">
+        <h3>Avg Temperature</h3>
+        <h2>26.8°C</h2>
+        <p style="color: #d32f2f;">▲ 1.2°C</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown("""
+    <div class="metric-card">
+        <h3>CO2 Emissions</h3>
+        <h2>2.1M tonnes</h2>
+        <p style="color: #d32f2f;">▲ 15.3%</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown("""
+    <div class="metric-card">
+        <h3>Growth Rate</h3>
+        <h2>4.2%</h2>
+        <p style="color: #388e3c;">▼ 0.8%</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col4:
+    st.markdown("""
+    <div class="metric-card">
+        <h3>Countries</h3>
+        <h2>195</h2>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Climate model equation
+st.subheader("Climate Model Equation")
+st.latex(r"Temperature = \beta_0 + \beta_1 \times CO2 + \beta_2 \times GDP + \varepsilon")
+st.caption("Linear relationship between temperature rise, emissions, and economic factors")
+
+# Main emissions chart
+st.subheader(f"CO2 Emissions Over Time - {selected_country} Focus")
+
+# Filter data based on selections
+filtered_emissions = df_emissions[
+    (df_emissions['year'] >= year_range[0]) & 
+    (df_emissions['year'] <= year_range[1])
+]
+
+# Create the main emissions plot
+fig_emissions = go.Figure()
+
+# Add lines for all countries, highlighting selected
+countries = df_emissions['country'].unique()
+for country in countries:
+    country_data = filtered_emissions[filtered_emissions['country'] == country]
+    
+    y_values = country_data['log_value'] if show_log_scale else country_data['value']
+    
+    fig_emissions.add_trace(go.Scatter(
+        x=country_data['year'],
+        y=y_values,
+        mode='lines',
+        name=country,
+        line=dict(
+            width=3 if country == selected_country else 1,
+            color='#2563eb' if country == selected_country else '#64748b'
+        ),
+        opacity=1.0 if country == selected_country else 0.4
+    ))
+
+fig_emissions.update_layout(
+    title=f"CO2 Emissions Trends ({year_range[0]}-{year_range[1]})",
+    xaxis_title="Year",
+    yaxis_title="Log10(Emissions)" if show_log_scale else "Emissions (tonnes)",
+    height=500,
+    showlegend=True
+)
+
+st.plotly_chart(fig_emissions, use_container_width=True)
+
+# Temperature correlation analysis
+if 'CO2' in selected_metrics and 'Temperature' in selected_metrics:
+    st.subheader("Temperature vs CO2 Correlation - India")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        filtered_temp = df_temperature[
+            (df_temperature['year'] >= year_range[0]) & 
+            (df_temperature['year'] <= year_range[1])
+        ]
         
-        data.push({
-          country,
-          year,
-          value: Math.round(Math.max(10000, value)),
-          logValue: Math.log10(Math.max(10000, value))
-        });
-      });
-    }
-    return data;
-  };
-
-  const generateTemperatureData = () => {
-    const data = [];
-    for (let year = 1980; year <= 2014; year++) {
-      const temp = 25.2 + (year - 1980) * 0.04 + Math.sin((year - 1980) * 0.3) * 0.8 + Math.random() * 0.3;
-      const emissions = 800000 + (year - 1980) * 45000 + Math.random() * 150000;
-      data.push({
-        year,
-        temperature: parseFloat(temp.toFixed(2)),
-        emissions: Math.round(emissions),
-        scaledTemp: ((temp - 25.5) / 1.2),
-        scaledEmissions: ((emissions - 1600000) / 600000)
-      });
-    }
-    return data;
-  };
-
-  const generateRegionalData = () => {
-    const regions = [
-      'South Asia', 'East Asia & Pacific', 'Europe & Central Asia', 
-      'North America', 'Middle East & North Africa', 'Sub-Saharan Africa', 
-      'Latin America & Caribbean'
-    ];
-    return regions.map(region => ({
-      region,
-      CO2: Math.random() * 2000000 + 500000,
-      GDP: Math.random() * 15000 + 5000,
-      Population: Math.random() * 1000 + 100,
-      CO2PerCapita: Math.random() * 8 + 2
-    }));
-  };
-
-  const emissionsData = useMemo(generateEmissionsData, []);
-  const temperatureData = useMemo(generateTemperatureData, []);
-  const regionalData = useMemo(generateRegionalData, []);
-
-  // Animation effect for year progression
-  useEffect(() => {
-    let interval;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setCurrentYear(prev => {
-          if (prev >= yearRange[1]) {
-            setIsPlaying(false);
-            return yearRange[0];
-          }
-          return prev + 1;
-        });
-      }, 200);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying, yearRange]);
-
-  // Streamlit-style metric component
-  const StreamlitMetric = ({ label, value, delta, unit = "" }) => (
-    <div className="bg-white p-4 rounded-lg border border-gray-200 text-center">
-      <div className="text-sm text-gray-600 font-medium mb-1">{label}</div>
-      <div className="text-2xl font-bold text-gray-900 mb-1">
-        {typeof value === 'number' ? value.toLocaleString() : value} {unit}
-      </div>
-      {delta && (
-        <div className={`text-sm font-medium ${delta > 0 ? 'text-red-500' : 'text-green-500'}`}>
-          {delta > 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(1)}{unit === '%' ? 'pp' : unit}
-        </div>
-      )}
-    </div>
-  );
-
-  // Streamlit-style sidebar
-  const Sidebar = () => (
-    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-      <h3 className="text-lg font-semibold mb-4">Interactive Controls</h3>
-      
-      {/* Country Selection */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select Country
-        </label>
-        <select 
-          value={selectedCountry} 
-          onChange={(e) => setSelectedCountry(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {['India', 'China', 'United States', 'Russia', 'Japan', 'Germany', 'Iran', 'South Korea', 'Saudi Arabia', 'Canada'].map(country => (
-            <option key={country} value={country}>{country}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Multi-select for Metrics */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select Metrics
-        </label>
-        <div className="space-y-2">
-          {['CO2', 'Temperature', 'GDP', 'Population'].map(metric => (
-            <label key={metric} className="flex items-center">
-              <input
-                type="checkbox"
-                checked={selectedMetrics.includes(metric)}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setSelectedMetrics([...selectedMetrics, metric]);
-                  } else {
-                    setSelectedMetrics(selectedMetrics.filter(m => m !== metric));
-                  }
-                }}
-                className="mr-2"
-              />
-              <span className="text-sm">{metric}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Log Scale Toggle */}
-      <div className="mb-6">
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            checked={showLogScale}
-            onChange={(e) => setShowLogScale(e.target.checked)}
-            className="mr-2"
-          />
-          <span className="text-sm font-medium">Use Log Scale</span>
-        </label>
-      </div>
-
-      {/* Year Range Slider */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Year Range: {yearRange[0]} - {yearRange[1]}
-        </label>
-        <div className="space-y-2">
-          <input
-            type="range"
-            min="1980"
-            max="2014"
-            value={yearRange[0]}
-            onChange={(e) => setYearRange([parseInt(e.target.value), yearRange[1]])}
-            className="w-full"
-          />
-          <input
-            type="range"
-            min="1980"
-            max="2014"
-            value={yearRange[1]}
-            onChange={(e) => setYearRange([yearRange[0], parseInt(e.target.value)])}
-            className="w-full"
-          />
-        </div>
-      </div>
-
-      {/* Animation Controls */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Animation Controls
-        </label>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-            <span className="ml-1">{isPlaying ? 'Pause' : 'Play'}</span>
-          </button>
-          <span className="text-sm text-gray-600">Year: {currentYear}</span>
-        </div>
-      </div>
-
-      {/* File Upload Simulation */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Upload Data
-        </label>
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-          <Upload className="mx-auto text-gray-400 mb-2" size={24} />
-          <p className="text-sm text-gray-600">Upload CSV data file</p>
-          <p className="text-xs text-gray-400">(Simulation only)</p>
-        </div>
-      </div>
-    </div>
-  );
-
-  const filteredTemperatureData = temperatureData.filter(d => 
-    d.year >= yearRange[0] && d.year <= yearRange[1]
-  );
-
-  const currentYearData = emissionsData
-    .filter(d => d.year === currentYear)
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 10);
-
-  return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Streamlit-style Title */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Data Tools for Sustainability Dashboard
-          </h1>
-          <p className="text-gray-600 text-lg mb-4">
-            Interactive CO2 Emissions & Climate Analysis Platform
-          </p>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto">
-            <p className="text-blue-800 text-sm">
-              <strong>Purpose:</strong> Deliver sustainability insights, monitor environmental metrics, 
-              and provide interactive data access for policy makers and researchers.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Streamlit-style Sidebar */}
-          <div className="lg:col-span-1">
-            <Sidebar />
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* Streamlit-style Metrics Row */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <StreamlitMetric 
-                label="Avg Temperature" 
-                value={26.8} 
-                delta={1.2}
-                unit="°C" 
-              />
-              <StreamlitMetric 
-                label="CO2 Emissions" 
-                value="2.1M" 
-                delta={15.3}
-                unit="tonnes" 
-              />
-              <StreamlitMetric 
-                label="Growth Rate" 
-                value={4.2} 
-                delta={-0.8}
-                unit="%" 
-              />
-              <StreamlitMetric 
-                label="Countries" 
-                value={195} 
-                unit="" 
-              />
+        fig_corr = px.scatter(
+            filtered_temp,
+            x='scaled_emissions',
+            y='scaled_temp',
+            title='Scaled Emissions vs Scaled Temperature',
+            labels={'scaled_emissions': 'Scaled CO2 Emissions', 'scaled_temp': 'Scaled Temperature'}
+        )
+        
+        # Add trend line
+        fig_corr.add_trace(go.Scatter(
+            x=filtered_temp['scaled_emissions'],
+            y=np.poly1d(np.polyfit(filtered_temp['scaled_emissions'], filtered_temp['scaled_temp'], 1))(filtered_temp['scaled_emissions']),
+            mode='lines',
+            name='Trend Line',
+            line=dict(color='red', width=2)
+        ))
+        
+        st.plotly_chart(fig_corr, use_container_width=True)
+    
+    with col2:
+        correlation = np.corrcoef(filtered_temp['scaled_emissions'], filtered_temp['scaled_temp'])[0, 1]
+        
+        st.markdown(f"""
+        <div style="text-align: center; padding: 2rem;">
+            <h1 style="color: #2563eb; font-size: 3em;">{correlation:.3f}</h1>
+            <h3>Correlation Coefficient</h3>
+            <div style="background-color: #e3f2fd; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
+                <p>Strong positive correlation between emissions and temperature rise</p>
             </div>
-
-            {/* LaTeX Equation Display (Streamlit style) */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">Climate Model Equation</h3>
-              <div className="bg-gray-50 p-4 rounded-lg text-center">
-                <div className="text-lg font-mono">
-                  Temperature = 
-                </div>
-                <p className="text-sm text-gray-600 mt-2">
-                  Linear relationship between temperature rise, emissions, and economic factors
-                </p>
-              </div>
-            </div>
-
-            {/* Interactive Chart with Country Highlighting */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">
-                CO2 Emissions Over Time - {selectedCountry} Focus
-              </h3>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="year" domain={[1980, 2014]} type="number" />
-                  <YAxis 
-                    scale={showLogScale ? 'log' : 'linear'}
-                    domain={showLogScale ? ['auto', 'auto'] : [0, 'dataMax']}
-                    tickFormatter={(value) => 
-                      showLogScale ? `10^${value.toFixed(1)}` : `${(value/1e6).toFixed(1)}M`
-                    }
-                  />
-                  <Tooltip 
-                    formatter={(value, name) => [
-                      showLogScale ? `10^${value.toFixed(2)}` : `${(value/1e6).toFixed(1)}M tonnes`, 
-                      name
-                    ]}
-                  />
-                  <Legend />
-                  {['India', 'China', 'United States', 'Russia', 'Japan'].map((country, index) => {
-                    const countryData = emissionsData
-                      .filter(d => d.country === country && d.year >= yearRange[0] && d.year <= yearRange[1]);
-                    return (
-                      <Line 
-                        key={country}
-                        dataKey={showLogScale ? "logValue" : "value"}
-                        data={countryData}
-                        stroke={country === selectedCountry ? '#2563eb' : '#64748b'}
-                        strokeWidth={country === selectedCountry ? 3 : 1}
-                        opacity={country === selectedCountry ? 1 : 0.4}
-                        dot={false}
-                        name={country}
-                      />
-                    );
-                  })}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Correlation Analysis */}
-            {selectedMetrics.includes('CO2') && selectedMetrics.includes('Temperature') && (
-              <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold mb-4">
-                  Temperature vs CO2 Correlation - {selectedCountry}
-                </h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <ScatterChart data={filteredTemperatureData}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                      <XAxis dataKey="scaledEmissions" name="Scaled Emissions" />
-                      <YAxis dataKey="scaledTemp" name="Scaled Temperature" />
-                      <Tooltip 
-                        cursor={{ strokeDasharray: '3 3' }}
-                        formatter={(value, name) => [value.toFixed(3), name]}
-                      />
-                      <Scatter fill="#2563eb" />
-                    </ScatterChart>
-                  </ResponsiveContainer>
-                  <div className="flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-4xl font-bold text-blue-600 mb-2">0.847</div>
-                      <div className="text-gray-600 mb-4">Correlation Coefficient</div>
-                      <div className="bg-blue-50 p-4 rounded-lg">
-                        <p className="text-sm text-gray-700">
-                          Strong positive correlation indicates significant relationship between 
-                          emissions and temperature rise in {selectedCountry}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Animated Bar Chart */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">
-                Top 10 Emitters in {currentYear} (Animation: {isPlaying ? 'Playing' : 'Paused'})
-              </h3>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={currentYearData} layout="horizontal">
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis type="number" tickFormatter={(value) => `${(value/1e6).toFixed(1)}M`} />
-                  <YAxis dataKey="country" type="category" width={100} />
-                  <Tooltip formatter={(value) => [`${(value/1e6).toFixed(1)}M tonnes`, 'Emissions']} />
-                  <Bar dataKey="value" fill="#2563eb">
-                    {currentYearData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={entry.country === selectedCountry ? '#dc2626' : '#2563eb'} 
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Regional Stacked Area Chart */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">Regional Analysis</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={regionalData}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="region" angle={-45} textAnchor="end" height={100} />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="CO2PerCapita" fill="#ef4444" name="CO2 Per Capita (tons)" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Code Display (Streamlit style) */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">Sample Analysis Code</h3>
-              <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
-                <div># Data preparation for sustainability analysis</div>
-                <div>import pandas as pd</div>
-                <div>import streamlit as st</div>
-                <div>import plotly.express as px</div>
-                <div></div>
-                <div># Load CO2 emissions data</div>
-                <div>df = pd.read_csv('emissions_data.csv')</div>
-                <div></div>
-                <div># Calculate correlation</div>
-                <div>correlation = df['emissions'].corr(df['temperature'])</div>
-                <div>st.write(f"Correlation: {'{correlation:.3f}'}")</div>
-              </div>
-            </div>
-
-            {/* Download Section */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">Export Results</h3>
-              <div className="flex space-x-4">
-                <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                  <Download size={16} className="mr-2" />
-                  Download CSV
-                </button>
-                <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                  <Download size={16} className="mr-2" />
-                  Export Charts
-                </button>
-                <button className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                  <Download size={16} className="mr-2" />
-                  Generate Report
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
+        """, unsafe_allow_html=True)
 
-        {/* Footer */}
-        <div className="mt-8 text-center text-gray-500 text-sm">
-          <p>ENVECON 105: Data Tools for Sustainability</p>
-        </div>
-      </div>
-    </div>
-  );
-};
+# Animated bar chart for current year
+st.subheader(f"Top 10 Emitters in {current_year}")
 
-export default Dashboard;
+current_year_data = df_emissions[df_emissions['year'] == current_year].nlargest(10, 'value')
+
+fig_bar = px.bar(
+    current_year_data,
+    x='value',
+    y='country',
+    orientation='h',
+    title=f'CO2 Emissions by Country in {current_year}',
+    labels={'value': 'CO2 Emissions (tonnes)', 'country': 'Country'},
+    color='country',
+    color_discrete_map={selected_country: '#dc2626'} if selected_country in current_year_data['country'].values else {}
+)
+
+fig_bar.update_layout(
+    height=500,
+    showlegend=False
+)
+
+st.plotly_chart(fig_bar, use_container_width=True)
+
+# Regional analysis
+st.subheader("Regional CO2 Per Capita Analysis")
+
+fig_regional = px.bar(
+    df_regional,
+    x='region',
+    y='co2_per_capita',
+    title='CO2 Emissions Per Capita by World Bank Region',
+    labels={'co2_per_capita': 'CO2 Per Capita (tonnes)', 'region': 'Region'},
+    color='co2_per_capita',
+    color_continuous_scale='Reds'
+)
+
+fig_regional.update_xaxis(tickangle=45)
+fig_regional.update_layout(height=400)
+
+st.plotly_chart(fig_regional, use_container_width=True)
+
+# Code example
+st.subheader("Sample Analysis Code")
+st.markdown("""
+<div class="code-block">
+# Data preparation for sustainability analysis<br>
+import pandas as pd<br>
+import streamlit as st<br>
+import plotly.express as px<br>
+<br>
+# Load CO2 emissions data<br>
+df = pd.read_csv('emissions_data.csv')<br>
+<br>
+# Calculate correlation<br>
+correlation = df['emissions'].corr(df['temperature'])<br>
+st.write(f"Correlation: {correlation:.3f}")<br>
+<br>
+# Create interactive plot<br>
+fig = px.scatter(df, x='emissions', y='temperature')<br>
+st.plotly_chart(fig)
+</div>
+""", unsafe_allow_html=True)
+
+# Export section
+st.subheader("Export Results")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    if st.button("Download CSV"):
+        csv = df_emissions.to_csv(index=False)
+        st.download_button(
+            label="Download Emissions Data",
+            data=csv,
+            file_name="co2_emissions_data.csv",
+            mime="text/csv"
+        )
+
+with col2:
+    if st.button("Export Charts"):
+        st.info("Chart export functionality would be implemented here")
+
+with col3:
+    if st.button("Generate Report"):
+        st.info("Report generation functionality would be implemented here")
+
+# Footer
+st.markdown("---")
+st.markdown(
+    "<div style='text-align: center; color: #666; padding: 1rem;'>"
+    "ENVECON 105: Data Tools for Sustainability • Streamlit Dashboard"
+    "</div>", 
+    unsafe_allow_html=True
+)
+
+# Additional information in sidebar
+st.sidebar.markdown("---")
+st.sidebar.subheader("About This Dashboard")
+st.sidebar.info(
+    "This dashboard demonstrates interactive data visualization "
+    "for sustainability analysis using Streamlit. It includes "
+    "CO2 emissions trends, temperature correlations, and "
+    "regional analysis features."
+)
+
+st.sidebar.subheader("Data Sources")
+st.sidebar.caption(
+    "Simulated data based on real-world patterns for "
+    "educational purposes. In production, this would "
+    "connect to live environmental databases."
+)
