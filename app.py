@@ -251,44 +251,77 @@ if st.sidebar.button("Play Animation"):
 current_year = st.sidebar.slider("Current Year", 1980, 2014, 2000)
 
 # Main content area
-# Metrics row - FIXED with better visibility
+# Metrics row - UPDATED with new metrics
 st.subheader("📊 Key Metrics Overview")
+
+# Calculate dynamic metrics
+latest_year = df_emissions['year'].max()
+previous_year = latest_year - 1
+
+# Total CO2 Emissions globally for latest year
+total_co2_latest = df_emissions[df_emissions['year'] == latest_year]['value'].sum()
+total_co2_previous = df_emissions[df_emissions['year'] == previous_year]['value'].sum()
+co2_change_pct = ((total_co2_latest - total_co2_previous) / total_co2_previous) * 100
+
+# Average energy use per person (from regional energy data)
+@st.cache_data
+def get_global_energy_average():
+    df_regional_energy = generate_regional_energy_data()
+    latest_energy = df_regional_energy[df_regional_energy['year'] == min(latest_year, 2017)]
+    return latest_energy['value'].mean()
+
+avg_energy_use = get_global_energy_average()
+
+# CO2 Growth rate (5-year average)
+five_years_ago = latest_year - 5
+recent_emissions = df_emissions[df_emissions['year'] >= five_years_ago].groupby('year')['value'].sum()
+if len(recent_emissions) >= 2:
+    growth_rate = ((recent_emissions.iloc[-1] / recent_emissions.iloc[0]) ** (1/5) - 1) * 100
+else:
+    growth_rate = co2_change_pct
+
+# Number of countries
+num_countries = df_emissions['country'].nunique()
 
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
-        <h3>Avg Temperature</h3>
-        <h2>26.8°C</h2>
-        <p class="metric-increase">▲ 1.2°C</p>
+        <h3>Total CO2 Emissions</h3>
+        <h2>{total_co2_latest/1e6:.1f}M tonnes</h2>
+        <p class="{'metric-increase' if co2_change_pct > 0 else 'metric-decrease'}">
+            {'▲' if co2_change_pct > 0 else '▼'} {abs(co2_change_pct):.1f}%
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
 with col2:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
-        <h3>CO2 Emissions</h3>
-        <h2>2.1M tonnes</h2>
-        <p class="metric-increase">▲ 15.3%</p>
+        <h3>Avg Energy Use</h3>
+        <h2>{avg_energy_use:.0f} kWh</h2>
+        <p class="metric-neutral">per person</p>
     </div>
     """, unsafe_allow_html=True)
 
 with col3:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
-        <h3>Growth Rate</h3>
-        <h2>4.2%</h2>
-        <p class="metric-decrease">▼ 0.8%</p>
+        <h3>CO2 Growth Rate</h3>
+        <h2>{growth_rate:.1f}%</h2>
+        <p class="{'metric-increase' if growth_rate > 0 else 'metric-decrease'}">
+            {'▲' if growth_rate > 0 else '▼'} 5-year avg
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
 with col4:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <h3>Countries</h3>
-        <h2>195</h2>
-        <p class="metric-neutral">—</p>
+        <h2>{num_countries}</h2>
+        <p class="metric-neutral">tracked</p>
     </div>
     """, unsafe_allow_html=True)
 
