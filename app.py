@@ -420,112 +420,125 @@ fig_bar.update_layout(
 st.plotly_chart(fig_bar, use_container_width=True)
 
 # Regional analysis
-st.subheader("🌐 Regional CO2 Per Capita Analysis")
+st.subheader("🌐 Regional Analysis")
 
-fig_regional = px.bar(
-    df_regional,
-    x='region',
-    y='co2_per_capita',
-    title='CO2 Emissions Per Capita by World Bank Region',
-    labels={'co2_per_capita': 'CO2 Per Capita (tonnes)', 'region': 'Region'},
-    color='co2_per_capita',
-    color_continuous_scale='Reds'
-)
+col1, col2 = st.columns(2)
 
-fig_regional.update_layout(
-    height=400,
-    plot_bgcolor='white',
-    paper_bgcolor='white',
-    xaxis={'tickangle': 45}
-)
+with col1:
+    st.markdown("#### CO2 Per Capita by Region")
+    fig_regional = px.bar(
+        df_regional,
+        x='region',
+        y='co2_per_capita',
+        title='CO2 Emissions Per Capita by World Bank Region',
+        labels={'co2_per_capita': 'CO2 Per Capita (tonnes)', 'region': 'Region'},
+        color='co2_per_capita',
+        color_continuous_scale='Reds'
+    )
 
-st.plotly_chart(fig_regional, use_container_width=True)
+    fig_regional.update_layout(
+        height=400,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        xaxis={'tickangle': 45},
+        font=dict(color='black'),
+        title_font=dict(color='black')
+    )
 
-# Regional Energy Trends Over Time
-st.subheader("⚡ Energy Use Per Person by Region Over Time")
+    st.plotly_chart(fig_regional, use_container_width=True)
 
-@st.cache_data
-def generate_regional_energy_data():
-    """Generate regional energy use data over time"""
-    regions = [
-        'South Asia', 'East Asia and Pacific', 'Europe and Central Asia',
-        'North America', 'Middle East and North Africa', 'Sub-Saharan Africa',
-        'Latin America and Caribbean'
+with col2:
+    st.markdown("#### Energy Use by Region Over Time")
+    
+    @st.cache_data
+    def generate_regional_energy_data():
+        """Generate regional energy use data over time"""
+        regions = [
+            'South Asia', 'East Asia and Pacific', 'Europe and Central Asia',
+            'North America', 'Middle East and North Africa', 'Sub-Saharan Africa',
+            'Latin America and Caribbean'
+        ]
+        
+        data = []
+        np.random.seed(42)
+        
+        # Base energy consumption levels by region (kWh per person)
+        base_levels = {
+            'North America': 12000,
+            'Europe and Central Asia': 6000,
+            'Middle East and North Africa': 4000,
+            'East Asia and Pacific': 3500,
+            'Latin America and Caribbean': 2000,
+            'South Asia': 800,
+            'Sub-Saharan Africa': 500
+        }
+        
+        for year in range(1990, 2018):
+            for region in regions:
+                base = base_levels[region]
+                # Add growth trend and some variation
+                growth_factor = 1 + (year - 1990) * 0.025
+                seasonal_variation = np.sin((year - 1990) * 0.3) * 0.1
+                noise = np.random.normal(0, 0.05)
+                
+                value = base * growth_factor * (1 + seasonal_variation + noise)
+                value = max(100, value)  # Ensure minimum value
+                
+                data.append({
+                    'region': region,
+                    'year': year,
+                    'value': round(value, 2)
+                })
+        
+        return pd.DataFrame(data)
+
+    df_regional_energy = generate_regional_energy_data()
+
+    # Filter for years before 2018 and within selected range
+    region_trend = df_regional_energy[
+        (df_regional_energy['year'] < 2018) & 
+        (df_regional_energy['year'] >= year_range[0]) & 
+        (df_regional_energy['year'] <= year_range[1])
     ]
-    
-    data = []
-    np.random.seed(42)
-    
-    # Base energy consumption levels by region (kWh per person)
-    base_levels = {
-        'North America': 12000,
-        'Europe and Central Asia': 6000,
-        'Middle East and North Africa': 4000,
-        'East Asia and Pacific': 3500,
-        'Latin America and Caribbean': 2000,
-        'South Asia': 800,
-        'Sub-Saharan Africa': 500
-    }
-    
-    for year in range(1990, 2018):
-        for region in regions:
-            base = base_levels[region]
-            # Add growth trend and some variation
-            growth_factor = 1 + (year - 1990) * 0.025
-            seasonal_variation = np.sin((year - 1990) * 0.3) * 0.1
-            noise = np.random.normal(0, 0.05)
-            
-            value = base * growth_factor * (1 + seasonal_variation + noise)
-            value = max(100, value)  # Ensure minimum value
-            
-            data.append({
-                'region': region,
-                'year': year,
-                'value': round(value, 2)
-            })
-    
-    return pd.DataFrame(data)
 
-df_regional_energy = generate_regional_energy_data()
+    # Create the line plot
+    fig_energy_trend = go.Figure()
 
-# Filter for years before 2018
-region_trend = df_regional_energy[df_regional_energy['year'] < 2018]
+    colors = px.colors.qualitative.Set1
+    for i, region in enumerate(region_trend['region'].unique()):
+        subset = region_trend[region_trend['region'] == region]
+        fig_energy_trend.add_trace(go.Scatter(
+            x=subset['year'],
+            y=subset['value'],
+            mode='lines+markers',
+            name=region,
+            line=dict(width=3, color=colors[i % len(colors)]),
+            marker=dict(size=4)
+        ))
 
-# Create the line plot
-fig_energy_trend = go.Figure()
+    fig_energy_trend.update_layout(
+        title='Energy Use Per Person by Region',
+        xaxis_title='Year',
+        yaxis_title='kWh per Person',
+        height=400,
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=1,
+            xanchor="left",
+            x=1.02,
+            font=dict(color='black')
+        ),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(color='black'),
+        title_font=dict(color='black')
+    )
 
-colors = px.colors.qualitative.Set1
-for i, region in enumerate(region_trend['region'].unique()):
-    subset = region_trend[region_trend['region'] == region]
-    fig_energy_trend.add_trace(go.Scatter(
-        x=subset['year'],
-        y=subset['value'],
-        mode='lines+markers',
-        name=region,
-        line=dict(width=3, color=colors[i % len(colors)]),
-        marker=dict(size=5)
-    ))
+    st.plotly_chart(fig_energy_trend, use_container_width=True)
 
-fig_energy_trend.update_layout(
-    title='Energy Use Per Person by Region Over Time (Before 2018)',
-    xaxis_title='Year',
-    yaxis_title='kWh per Person',
-    height=500,
-    legend=dict(
-        orientation="v",
-        yanchor="top",
-        y=1,
-        xanchor="left",
-        x=1.02
-    ),
-    plot_bgcolor='white',
-    paper_bgcolor='white'
-)
-
-st.plotly_chart(fig_energy_trend, use_container_width=True)
-
-# Multi-metric comparison: India vs Rest of World
-st.subheader("🇮🇳 India vs Rest of World - Multi-Metric Analysis")
+# Nation-specific analysis
+st.subheader(f"🏛️ {selected_country}-Specific Analysis")
 
 @st.cache_data
 def generate_comparison_data():
@@ -533,7 +546,7 @@ def generate_comparison_data():
     # Generate GDP data
     gdp_data = []
     np.random.seed(42)
-    countries = ['India', 'China', 'United States', 'Russia', 'Japan', 'Germany']
+    countries = ['India', 'China', 'United States', 'Russia', 'Japan', 'Germany', 'Iran', 'South Korea', 'Saudi Arabia', 'Canada']
     
     for year in range(1990, 2015):
         for country in countries:
@@ -543,8 +556,14 @@ def generate_comparison_data():
                 base_gdp = 350 + (year - 1990) * 35 + np.random.normal(0, 25)
             elif country == 'United States':
                 base_gdp = 25000 + (year - 1990) * 800 + np.random.normal(0, 500)
+            elif country == 'Russia':
+                base_gdp = 3000 + (year - 1990) * 150 + np.random.normal(0, 100)
+            elif country == 'Japan':
+                base_gdp = 28000 + (year - 1990) * 400 + np.random.normal(0, 300)
+            elif country == 'Germany':
+                base_gdp = 22000 + (year - 1990) * 500 + np.random.normal(0, 400)
             else:
-                base_gdp = np.random.uniform(15000, 30000) + (year - 1990) * np.random.uniform(200, 600)
+                base_gdp = np.random.uniform(8000, 20000) + (year - 1990) * np.random.uniform(200, 600)
             
             gdp_data.append({
                 'country': country,
@@ -552,7 +571,7 @@ def generate_comparison_data():
                 'value': max(100, base_gdp)
             })
     
-    # Generate Energy data (reuse some emissions logic but scale differently)
+    # Generate Energy data
     energy_data = []
     for year in range(1990, 2015):
         for country in countries:
@@ -562,6 +581,12 @@ def generate_comparison_data():
                 base_energy = 800 + (year - 1990) * 45 + np.random.normal(0, 50)
             elif country == 'United States':
                 base_energy = 12000 + (year - 1990) * 100 + np.random.normal(0, 200)
+            elif country == 'Russia':
+                base_energy = 6000 + (year - 1990) * 80 + np.random.normal(0, 150)
+            elif country == 'Japan':
+                base_energy = 7500 + (year - 1990) * 120 + np.random.normal(0, 180)
+            elif country == 'Germany':
+                base_energy = 6500 + (year - 1990) * 90 + np.random.normal(0, 160)
             else:
                 base_energy = np.random.uniform(2000, 8000) + (year - 1990) * np.random.uniform(50, 150)
             
@@ -575,7 +600,7 @@ def generate_comparison_data():
 
 df_gdp, df_energy = generate_comparison_data()
 
-# Create the multi-metric comparison
+# Create the multi-metric comparison - now uses selected_country instead of hardcoded India
 metrics_data = [
     ('CO2 Emissions (tonnes)', df_emissions[df_emissions['year'] >= 1990]),
     ('Energy Use (kWh per person)', df_energy),
@@ -586,9 +611,9 @@ metrics_data = [
 fig_comparison = make_subplots(
     rows=3, cols=2,
     subplot_titles=[
-        'CO2 Emissions - Rest of World', 'CO2 Emissions - India',
-        'Energy Use - Rest of World', 'Energy Use - India', 
-        'GDP per capita - Rest of World', 'GDP per capita - India'
+        'CO2 Emissions - Rest of World', f'CO2 Emissions - {selected_country}',
+        'Energy Use - Rest of World', f'Energy Use - {selected_country}', 
+        'GDP per capita - Rest of World', f'GDP per capita - {selected_country}'
     ],
     vertical_spacing=0.08,
     horizontal_spacing=0.1
@@ -603,11 +628,15 @@ for i, (metric_name, df_metric) in enumerate(metrics_data):
         (df_metric['year'] <= year_range[1])
     ]
     
-    # Countries excluding India
-    countries_excl_india = [c for c in df_filtered['country'].unique() if c != 'India']
+    # Countries excluding selected country
+    countries_excl_selected = [c for c in df_filtered['country'].unique() if c != selected_country]
+    
+    # Calculate y-axis limits for consistency
+    valid_vals = df_filtered['value'].dropna()
+    ymin, ymax = valid_vals.min() * 0.9, valid_vals.max() * 1.1
     
     # Plot other countries (left column)
-    for country in countries_excl_india:
+    for country in countries_excl_selected:
         df_country = df_filtered[df_filtered['country'] == country]
         fig_comparison.add_trace(
             go.Scatter(
@@ -621,39 +650,45 @@ for i, (metric_name, df_metric) in enumerate(metrics_data):
             row=row, col=1
         )
     
-    # Plot India (right column)
-    df_india = df_filtered[df_filtered['country'] == 'India']
-    if not df_india.empty:
+    # Plot selected country (right column)
+    df_selected = df_filtered[df_filtered['country'] == selected_country]
+    if not df_selected.empty:
         fig_comparison.add_trace(
             go.Scatter(
-                x=df_india['year'],
-                y=df_india['value'],
+                x=df_selected['year'],
+                y=df_selected['value'],
                 mode='lines+markers',
-                name='India',
+                name=selected_country,
                 line=dict(color='#dc2626', width=3),
                 marker=dict(size=6),
                 showlegend=False
             ),
             row=row, col=2
         )
+    
+    # Set consistent y-axis ranges for both columns
+    fig_comparison.update_yaxes(range=[ymin, ymax], row=row, col=1)
+    fig_comparison.update_yaxes(range=[ymin, ymax], row=row, col=2)
 
 # Update layout
 fig_comparison.update_layout(
     height=800,
-    title_text="Distribution of Indicators by Year and Value",
+    title_text=f"Distribution of Indicators: {selected_country} vs Rest of World",
     title_x=0.5,
     plot_bgcolor='white',
-    paper_bgcolor='white'
+    paper_bgcolor='white',
+    font=dict(color='black'),
+    title_font=dict(color='black')
 )
 
 # Update x-axis labels for bottom row
-fig_comparison.update_xaxes(title_text="Year", row=3, col=1)
-fig_comparison.update_xaxes(title_text="Year", row=3, col=2)
+fig_comparison.update_xaxes(title_text="Year", row=3, col=1, title_font=dict(color='black'))
+fig_comparison.update_xaxes(title_text="Year", row=3, col=2, title_font=dict(color='black'))
 
 # Update y-axis labels
-fig_comparison.update_yaxes(title_text="CO2 Emissions", row=1, col=1)
-fig_comparison.update_yaxes(title_text="Energy Use", row=2, col=1)
-fig_comparison.update_yaxes(title_text="GDP per capita", row=3, col=1)
+fig_comparison.update_yaxes(title_text="CO2 Emissions", row=1, col=1, title_font=dict(color='black'))
+fig_comparison.update_yaxes(title_text="Energy Use", row=2, col=1, title_font=dict(color='black'))
+fig_comparison.update_yaxes(title_text="GDP per capita", row=3, col=1, title_font=dict(color='black'))
 
 st.plotly_chart(fig_comparison, use_container_width=True)
 
