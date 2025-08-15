@@ -343,7 +343,7 @@ const Dashboard = () => {
             {selectedMetrics.includes('CO2') && selectedMetrics.includes('Temperature') && (
               <div className="bg-white p-6 rounded-lg border border-gray-200">
                 <h3 className="text-lg font-semibold mb-4">
-                  🔗 Temperature vs CO2 Correlation - {selectedCountry}
+                  Temperature vs CO2 Correlation - {selectedCountry}
                 </h3>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <ResponsiveContainer width="100%" height={300}>
