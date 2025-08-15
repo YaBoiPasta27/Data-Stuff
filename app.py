@@ -453,7 +453,7 @@ const Dashboard = () => {
 
         {/* Footer */}
         <div className="mt-8 text-center text-gray-500 text-sm">
-          <p>Built with React • Inspired by Streamlit Design Principles • ENVECON 105: Data Tools for Sustainability</p>
+          <p>ENVECON 105: Data Tools for Sustainability</p>
         </div>
       </div>
     </div>
