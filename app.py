@@ -112,7 +112,7 @@ const Dashboard = () => {
       {/* Country Selection */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          📍 Select Country
+          Select Country
         </label>
         <select 
           value={selectedCountry} 
@@ -128,7 +128,7 @@ const Dashboard = () => {
       {/* Multi-select for Metrics */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          📊 Select Metrics
+          Select Metrics
         </label>
         <div className="space-y-2">
           {['CO2', 'Temperature', 'GDP', 'Population'].map(metric => (
@@ -160,14 +160,14 @@ const Dashboard = () => {
             onChange={(e) => setShowLogScale(e.target.checked)}
             className="mr-2"
           />
-          <span className="text-sm font-medium">📈 Use Log Scale</span>
+          <span className="text-sm font-medium">Use Log Scale</span>
         </label>
       </div>
 
       {/* Year Range Slider */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          📅 Year Range: {yearRange[0]} - {yearRange[1]}
+          Year Range: {yearRange[0]} - {yearRange[1]}
         </label>
         <div className="space-y-2">
           <input
@@ -192,7 +192,7 @@ const Dashboard = () => {
       {/* Animation Controls */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          ⏯️ Animation Controls
+          Animation Controls
         </label>
         <div className="flex items-center space-x-2">
           <button
@@ -209,7 +209,7 @@ const Dashboard = () => {
       {/* File Upload Simulation */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          📁 Upload Data
+          Upload Data
         </label>
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
           <Upload className="mx-auto text-gray-400 mb-2" size={24} />
@@ -235,7 +235,7 @@ const Dashboard = () => {
         {/* Streamlit-style Title */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            🌍 Data Tools for Sustainability Dashboard
+            Data Tools for Sustainability Dashboard
           </h1>
           <p className="text-gray-600 text-lg mb-4">
             Interactive CO₂ Emissions & Climate Analysis Platform
@@ -259,25 +259,25 @@ const Dashboard = () => {
             {/* Streamlit-style Metrics Row */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <StreamlitMetric 
-                label="🌡️ Avg Temperature" 
+                label="Avg Temperature" 
                 value={26.8} 
                 delta={1.2}
                 unit="°C" 
               />
               <StreamlitMetric 
-                label="🏭 CO₂ Emissions" 
+                label="CO₂ Emissions" 
                 value="2.1M" 
                 delta={15.3}
                 unit="tonnes" 
               />
               <StreamlitMetric 
-                label="📈 Growth Rate" 
+                label="Growth Rate" 
                 value={4.2} 
                 delta={-0.8}
                 unit="%" 
               />
               <StreamlitMetric 
-                label="🗺️ Countries" 
+                label="Countries" 
                 value={195} 
                 unit="" 
               />
@@ -299,7 +299,7 @@ const Dashboard = () => {
             {/* Interactive Chart with Country Highlighting */}
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <h3 className="text-lg font-semibold mb-4">
-                📊 CO₂ Emissions Over Time - {selectedCountry} Focus
+                CO₂ Emissions Over Time - {selectedCountry} Focus
               </h3>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart>
@@ -377,7 +377,7 @@ const Dashboard = () => {
             {/* Animated Bar Chart */}
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <h3 className="text-lg font-semibold mb-4">
-                🏆 Top 10 Emitters in {currentYear} (Animation: {isPlaying ? 'Playing' : 'Paused'})
+                Top 10 Emitters in {currentYear} (Animation: {isPlaying ? 'Playing' : 'Paused'})
               </h3>
               <ResponsiveContainer width="100%" height={400}>
                 <BarChart data={currentYearData} layout="horizontal">
@@ -399,7 +399,7 @@ const Dashboard = () => {
 
             {/* Regional Stacked Area Chart */}
             <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">🌏 Regional Analysis</h3>
+              <h3 className="text-lg font-semibold mb-4">Regional Analysis</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={regionalData}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -414,7 +414,7 @@ const Dashboard = () => {
 
             {/* Code Display (Streamlit style) */}
             <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">💻 Sample Analysis Code</h3>
+              <h3 className="text-lg font-semibold mb-4">Sample Analysis Code</h3>
               <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
                 <div># Data preparation for sustainability analysis</div>
                 <div>import pandas as pd</div>
@@ -432,7 +432,7 @@ const Dashboard = () => {
 
             {/* Download Section */}
             <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">📥 Export Results</h3>
+              <h3 className="text-lg font-semibold mb-4">Export Results</h3>
               <div className="flex space-x-4">
                 <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                   <Download size={16} className="mr-2" />
