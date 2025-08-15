@@ -1,9 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+import matplotlib.pyplot as plt
+import seaborn as sns
 import time
 
 # Page configuration
@@ -223,37 +222,33 @@ filtered_emissions = df_emissions[
     (df_emissions['year'] <= year_range[1])
 ]
 
-# Create the main emissions plot
-fig_emissions = go.Figure()
+# Create matplotlib figure
+fig, ax = plt.subplots(figsize=(12, 6))
 
-# Add lines for all countries, highlighting selected
+# Plot all countries with highlighting
 countries = df_emissions['country'].unique()
 for country in countries:
     country_data = filtered_emissions[filtered_emissions['country'] == country]
     
     y_values = country_data['log_value'] if show_log_scale else country_data['value']
     
-    fig_emissions.add_trace(go.Scatter(
-        x=country_data['year'],
-        y=y_values,
-        mode='lines',
-        name=country,
-        line=dict(
-            width=3 if country == selected_country else 1,
-            color='#2563eb' if country == selected_country else '#64748b'
-        ),
-        opacity=1.0 if country == selected_country else 0.4
-    ))
+    if country == selected_country:
+        ax.plot(country_data['year'], y_values, 
+                linewidth=3, color='#2563eb', label=country, alpha=1.0)
+    else:
+        ax.plot(country_data['year'], y_values, 
+                linewidth=1, color='#64748b', alpha=0.4)
 
-fig_emissions.update_layout(
-    title=f"CO2 Emissions Trends ({year_range[0]}-{year_range[1]})",
-    xaxis_title="Year",
-    yaxis_title="Log10(Emissions)" if show_log_scale else "Emissions (tonnes)",
-    height=500,
-    showlegend=True
-)
+ax.set_title(f"CO2 Emissions Trends ({year_range[0]}-{year_range[1]})")
+ax.set_xlabel("Year")
+ax.set_ylabel("Log10(Emissions)" if show_log_scale else "Emissions (tonnes)")
+ax.grid(True, alpha=0.3)
+ax.legend()
 
-st.plotly_chart(fig_emissions, use_container_width=True)
+if not show_log_scale:
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x/1e6:.1f}M'))
+
+st.pyplot(fig)
 
 # Temperature correlation analysis
 if 'CO2' in selected_metrics and 'Temperature' in selected_metrics:
@@ -267,24 +262,25 @@ if 'CO2' in selected_metrics and 'Temperature' in selected_metrics:
             (df_temperature['year'] <= year_range[1])
         ]
         
-        fig_corr = px.scatter(
-            filtered_temp,
-            x='scaled_emissions',
-            y='scaled_temp',
-            title='Scaled Emissions vs Scaled Temperature',
-            labels={'scaled_emissions': 'Scaled CO2 Emissions', 'scaled_temp': 'Scaled Temperature'}
-        )
+        fig, ax = plt.subplots(figsize=(10, 6))
         
-        # Add trend line
-        fig_corr.add_trace(go.Scatter(
-            x=filtered_temp['scaled_emissions'],
-            y=np.poly1d(np.polyfit(filtered_temp['scaled_emissions'], filtered_temp['scaled_temp'], 1))(filtered_temp['scaled_emissions']),
-            mode='lines',
-            name='Trend Line',
-            line=dict(color='red', width=2)
-        ))
+        # Scatter plot
+        ax.scatter(filtered_temp['scaled_emissions'], filtered_temp['scaled_temp'], 
+                  alpha=0.7, color='#2563eb', s=50)
         
-        st.plotly_chart(fig_corr, use_container_width=True)
+        # Trend line
+        z = np.polyfit(filtered_temp['scaled_emissions'], filtered_temp['scaled_temp'], 1)
+        p = np.poly1d(z)
+        ax.plot(filtered_temp['scaled_emissions'], p(filtered_temp['scaled_emissions']), 
+                color='red', linewidth=2, linestyle='--', label='Trend Line')
+        
+        ax.set_xlabel('Scaled CO2 Emissions')
+        ax.set_ylabel('Scaled Temperature')
+        ax.set_title('Scaled Emissions vs Scaled Temperature')
+        ax.grid(True, alpha=0.3)
+        ax.legend()
+        
+        st.pyplot(fig)
     
     with col2:
         correlation = np.corrcoef(filtered_temp['scaled_emissions'], filtered_temp['scaled_temp'])[0, 1]
@@ -304,41 +300,54 @@ st.subheader(f"Top 10 Emitters in {current_year}")
 
 current_year_data = df_emissions[df_emissions['year'] == current_year].nlargest(10, 'value')
 
-fig_bar = px.bar(
-    current_year_data,
-    x='value',
-    y='country',
-    orientation='h',
-    title=f'CO2 Emissions by Country in {current_year}',
-    labels={'value': 'CO2 Emissions (tonnes)', 'country': 'Country'},
-    color='country',
-    color_discrete_map={selected_country: '#dc2626'} if selected_country in current_year_data['country'].values else {}
-)
+fig, ax = plt.subplots(figsize=(12, 8))
 
-fig_bar.update_layout(
-    height=500,
-    showlegend=False
-)
+# Create horizontal bar chart
+countries_list = current_year_data['country'].tolist()
+values_list = current_year_data['value'].tolist()
 
-st.plotly_chart(fig_bar, use_container_width=True)
+# Color bars, highlighting selected country
+colors = ['#dc2626' if country == selected_country else '#2563eb' for country in countries_list]
+
+bars = ax.barh(countries_list, values_list, color=colors)
+
+ax.set_xlabel('CO2 Emissions (tonnes)')
+ax.set_title(f'CO2 Emissions by Country in {current_year}')
+ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x/1e6:.1f}M'))
+
+# Add value labels on bars
+for i, (country, value) in enumerate(zip(countries_list, values_list)):
+    ax.text(value + max(values_list)*0.01, i, f'{value/1e6:.1f}M', 
+            va='center', fontsize=9)
+
+plt.tight_layout()
+st.pyplot(fig)
 
 # Regional analysis
 st.subheader("Regional CO2 Per Capita Analysis")
 
-fig_regional = px.bar(
-    df_regional,
-    x='region',
-    y='co2_per_capita',
-    title='CO2 Emissions Per Capita by World Bank Region',
-    labels={'co2_per_capita': 'CO2 Per Capita (tonnes)', 'region': 'Region'},
-    color='co2_per_capita',
-    color_continuous_scale='Reds'
-)
+fig, ax = plt.subplots(figsize=(12, 6))
 
-fig_regional.update_xaxis(tickangle=45)
-fig_regional.update_layout(height=400)
+regions = df_regional['region'].tolist()
+values = df_regional['co2_per_capita'].tolist()
 
-st.plotly_chart(fig_regional, use_container_width=True)
+# Create color map
+colors = plt.cm.Reds(np.linspace(0.3, 1, len(regions)))
+
+bars = ax.bar(regions, values, color=colors)
+
+ax.set_ylabel('CO2 Per Capita (tonnes)')
+ax.set_title('CO2 Emissions Per Capita by World Bank Region')
+ax.tick_params(axis='x', rotation=45)
+
+# Add value labels on bars
+for bar, value in zip(bars, values):
+    height = bar.get_height()
+    ax.text(bar.get_x() + bar.get_width()/2., height + 0.1,
+            f'{value:.1f}', ha='center', va='bottom', fontsize=9)
+
+plt.tight_layout()
+st.pyplot(fig)
 
 # Code example
 st.subheader("Sample Analysis Code")
