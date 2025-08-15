@@ -288,7 +288,7 @@ const Dashboard = () => {
               <h3 className="text-lg font-semibold mb-4">Climate Model Equation</h3>
               <div className="bg-gray-50 p-4 rounded-lg text-center">
                 <div className="text-lg font-mono">
-                  Temperature = β₀ + β₁ × CO2 + β₂ × GDP + ε
+                  Temperature = 
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
                   Linear relationship between temperature rise, emissions, and economic factors
