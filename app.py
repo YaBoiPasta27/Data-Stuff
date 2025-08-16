@@ -243,6 +243,7 @@ year_range = st.sidebar.slider(
     step=1
 )
 
+current_year = st.sidebar.slider("Current Year", 1980, 2014, 2000)
 # Main content area
 # Metrics row - FIXED with better visibility
 st.subheader("📊 Key Metrics Overview")
