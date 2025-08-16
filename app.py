@@ -225,11 +225,6 @@ selected_country = st.sidebar.selectbox(
 )
 
 # Metrics selection
-selected_metrics = st.sidebar.multiselect(
-    "Select Metrics",
-    options=['CO2', 'Temperature', 'GDP', 'Population'],
-    default=['CO2', 'Temperature']
-)
 
 # Log scale toggle
 show_log_scale = st.sidebar.checkbox("Use Log Scale")
