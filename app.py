@@ -243,7 +243,6 @@ year_range = st.sidebar.slider(
     step=1
 )
 
-
 # Main content area
 # Metrics row - FIXED with better visibility
 st.subheader("📊 Key Metrics Overview")
@@ -727,8 +726,7 @@ st.sidebar.info(
 
 st.sidebar.subheader("📊 Data Sources")
 st.sidebar.caption(
-    "CO2 - https://www.gapminder.org/data/. - CO2 emission per person\n"
-    "GDP - https://data.worldbank.org/indicator/NY.GDP.PCAP.KD.ZG\n"
-    "Energy Use - https://data.worldbank.org/indicator/EG.USE.PCAP.KG.OE\n"
-    "Temperatures - https://climateknowledgeportal.worldbank.org/"
+    "CO2 - https://www.gapminder.org/data/. - CO2 emission per person\nGDP - https://data.worldbank.org/indicator/NY.GDP.PCAP.KD.ZG\n
+Energy Use - https://data.worldbank.org/indicator/EG.USE.PCAP.KG.OE\n
+Temperatures - https://climateknowledgeportal.worldbank.org/"
 )
