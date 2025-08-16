@@ -243,12 +243,6 @@ year_range = st.sidebar.slider(
     step=1
 )
 
-# Animation controls
-st.sidebar.subheader("🎬 Animation Controls")
-if st.sidebar.button("Play Animation"):
-    st.sidebar.info("Animation would cycle through years here")
-
-current_year = st.sidebar.slider("Current Year", 1980, 2014, 2000)
 
 # Main content area
 # Metrics row - FIXED with better visibility
