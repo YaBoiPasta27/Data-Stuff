@@ -122,7 +122,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Data generation functions
 @st.cache_data
 def generate_emissions_data():
     """Generate CO2 emissions data for multiple countries"""
@@ -224,13 +223,6 @@ selected_country = st.sidebar.selectbox(
     index=0
 )
 
-# Metrics selection
-selected_metrics = st.sidebar.multiselect(
-    "Select Metrics",
-    options=['CO2', 'Temperature', 'GDP', 'Population'],
-    default=['CO2', 'Temperature']
-)
-
 # Log scale toggle
 show_log_scale = st.sidebar.checkbox("Use Log Scale")
 
@@ -243,15 +235,7 @@ year_range = st.sidebar.slider(
     step=1
 )
 
-# Animation controls
-st.sidebar.subheader("🎬 Animation Controls")
-if st.sidebar.button("Play Animation"):
-    st.sidebar.info("Animation would cycle through years here")
 
-current_year = st.sidebar.slider("Current Year", 1980, 2014, 2000)
-
-# Main content area
-# Metrics row - FIXED with better visibility
 st.subheader("📊 Key Metrics Overview")
 
 col1, col2, col3, col4 = st.columns(4)
@@ -259,9 +243,9 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.markdown("""
     <div class="metric-card">
-        <h3>Avg Temperature</h3>
-        <h2>26.8°C</h2>
-        <p class="metric-increase">▲ 1.2°C</p>
+        <h3>Avg Global Temperature</h3>
+        <h2>15°C</h2>
+        <p class="metric-increase">+0.07°C</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -269,8 +253,7 @@ with col2:
     st.markdown("""
     <div class="metric-card">
         <h3>CO2 Emissions</h3>
-        <h2>2.1M tonnes</h2>
-        <p class="metric-increase">▲ 15.3%</p>
+        <h2>37.4B tonnes</h2>
     </div>
     """, unsafe_allow_html=True)
 
@@ -278,8 +261,7 @@ with col3:
     st.markdown("""
     <div class="metric-card">
         <h3>Growth Rate</h3>
-        <h2>4.2%</h2>
-        <p class="metric-decrease">▼ 0.8%</p>
+        <h2>1.1%</h2>
     </div>
     """, unsafe_allow_html=True)
 
@@ -287,7 +269,7 @@ with col4:
     st.markdown("""
     <div class="metric-card">
         <h3>Countries</h3>
-        <h2>195</h2>
+        <h2>197</h2>
         <p class="metric-neutral">—</p>
     </div>
     """, unsafe_allow_html=True)
@@ -340,6 +322,162 @@ fig_emissions.update_layout(
 )
 
 st.plotly_chart(fig_emissions, use_container_width=True)
+
+# Nation-specific analysis
+st.subheader(f"🏛️ {selected_country}-Specific Analysis")
+
+@st.cache_data
+def generate_comparison_data():
+    """Generate comparison data for multiple metrics"""
+    # Generate GDP data
+    gdp_data = []
+    np.random.seed(42)
+    countries = ['India', 'China', 'United States', 'Russia', 'Japan', 'Germany', 'Iran', 'South Korea', 'Saudi Arabia', 'Canada']
+    
+    for year in range(1990, 2015):
+        for country in countries:
+            if country == 'India':
+                base_gdp = 400 + (year - 1990) * 25 + np.random.normal(0, 20)
+            elif country == 'China':
+                base_gdp = 350 + (year - 1990) * 35 + np.random.normal(0, 25)
+            elif country == 'United States':
+                base_gdp = 25000 + (year - 1990) * 800 + np.random.normal(0, 500)
+            elif country == 'Russia':
+                base_gdp = 3000 + (year - 1990) * 150 + np.random.normal(0, 100)
+            elif country == 'Japan':
+                base_gdp = 28000 + (year - 1990) * 400 + np.random.normal(0, 300)
+            elif country == 'Germany':
+                base_gdp = 22000 + (year - 1990) * 500 + np.random.normal(0, 400)
+            else:
+                base_gdp = np.random.uniform(8000, 20000) + (year - 1990) * np.random.uniform(200, 600)
+            
+            gdp_data.append({
+                'country': country,
+                'year': year,
+                'value': max(100, base_gdp)
+            })
+    
+    # Generate Energy data
+    energy_data = []
+    for year in range(1990, 2015):
+        for country in countries:
+            if country == 'India':
+                base_energy = 400 + (year - 1990) * 15 + np.random.normal(0, 30)
+            elif country == 'China':
+                base_energy = 800 + (year - 1990) * 45 + np.random.normal(0, 50)
+            elif country == 'United States':
+                base_energy = 12000 + (year - 1990) * 100 + np.random.normal(0, 200)
+            elif country == 'Russia':
+                base_energy = 6000 + (year - 1990) * 80 + np.random.normal(0, 150)
+            elif country == 'Japan':
+                base_energy = 7500 + (year - 1990) * 120 + np.random.normal(0, 180)
+            elif country == 'Germany':
+                base_energy = 6500 + (year - 1990) * 90 + np.random.normal(0, 160)
+            else:
+                base_energy = np.random.uniform(2000, 8000) + (year - 1990) * np.random.uniform(50, 150)
+            
+            energy_data.append({
+                'country': country,
+                'year': year,
+                'value': max(100, base_energy)
+            })
+    
+    return pd.DataFrame(gdp_data), pd.DataFrame(energy_data)
+
+df_gdp, df_energy = generate_comparison_data()
+
+# Create the multi-metric comparison - now uses selected_country instead of hardcoded India
+metrics_data = [
+    ('CO2 Emissions (tonnes)', df_emissions[df_emissions['year'] >= 1990]),
+    ('Energy Use (kWh per person)', df_energy),
+    ('GDP per capita (USD)', df_gdp)
+]
+
+# Create subplots
+fig_comparison = make_subplots(
+    rows=3, cols=2,
+    subplot_titles=[
+        'CO2 Emissions - Rest of World', f'CO2 Emissions - {selected_country}',
+        'Energy Use - Rest of World', f'Energy Use - {selected_country}', 
+        'GDP per capita - Rest of World', f'GDP per capita - {selected_country}'
+    ],
+    vertical_spacing=0.08,
+    horizontal_spacing=0.1
+)
+
+for i, (metric_name, df_metric) in enumerate(metrics_data):
+    row = i + 1
+    
+    # Filter data for the selected year range
+    df_filtered = df_metric[
+        (df_metric['year'] >= year_range[0]) & 
+        (df_metric['year'] <= year_range[1])
+    ]
+    
+    # Countries excluding selected country
+    countries_excl_selected = [c for c in df_filtered['country'].unique() if c != selected_country]
+    
+    # Calculate y-axis limits for consistency
+    valid_vals = df_filtered['value'].dropna()
+    ymin, ymax = valid_vals.min() * 0.9, valid_vals.max() * 1.1
+    
+    # Plot other countries (left column)
+    for country in countries_excl_selected:
+        df_country = df_filtered[df_filtered['country'] == country]
+        fig_comparison.add_trace(
+            go.Scatter(
+                x=df_country['year'],
+                y=df_country['value'],
+                mode='lines',
+                name=country,
+                line=dict(color='rgba(0,0,0,0.3)', width=2),
+                showlegend=False
+            ),
+            row=row, col=1
+        )
+    
+    # Plot selected country (right column)
+    df_selected = df_filtered[df_filtered['country'] == selected_country]
+    if not df_selected.empty:
+        fig_comparison.add_trace(
+            go.Scatter(
+                x=df_selected['year'],
+                y=df_selected['value'],
+                mode='lines+markers',
+                name=selected_country,
+                line=dict(color='#dc2626', width=3),
+                marker=dict(size=6),
+                showlegend=False
+            ),
+            row=row, col=2
+        )
+    
+    # Set consistent y-axis ranges for both columns
+    fig_comparison.update_yaxes(range=[ymin, ymax], row=row, col=1)
+    fig_comparison.update_yaxes(range=[ymin, ymax], row=row, col=2)
+
+# Update layout
+fig_comparison.update_layout(
+    height=800,
+    title_text=f"Distribution of Indicators: {selected_country} vs Rest of World",
+    title_x=0.5,
+    plot_bgcolor='white',
+    paper_bgcolor='white',
+    font=dict(color='black'),
+    title_font=dict(color='black')
+)
+
+# Update x-axis labels for bottom row
+fig_comparison.update_xaxes(title_text="Year", row=3, col=1, title_font=dict(color='black'))
+fig_comparison.update_xaxes(title_text="Year", row=3, col=2, title_font=dict(color='black'))
+
+# Update y-axis labels
+fig_comparison.update_yaxes(title_text="CO2 Emissions", row=1, col=1, title_font=dict(color='black'))
+fig_comparison.update_yaxes(title_text="Energy Use", row=2, col=1, title_font=dict(color='black'))
+fig_comparison.update_yaxes(title_text="GDP per capita", row=3, col=1, title_font=dict(color='black'))
+
+st.plotly_chart(fig_comparison, use_container_width=True)
+
 
 # Temperature correlation analysis
 if 'CO2' in selected_metrics and 'Temperature' in selected_metrics:
@@ -537,160 +675,6 @@ with col2:
 
     st.plotly_chart(fig_energy_trend, use_container_width=True)
 
-# Nation-specific analysis
-st.subheader(f"🏛️ {selected_country}-Specific Analysis")
-
-@st.cache_data
-def generate_comparison_data():
-    """Generate comparison data for multiple metrics"""
-    # Generate GDP data
-    gdp_data = []
-    np.random.seed(42)
-    countries = ['India', 'China', 'United States', 'Russia', 'Japan', 'Germany', 'Iran', 'South Korea', 'Saudi Arabia', 'Canada']
-    
-    for year in range(1990, 2015):
-        for country in countries:
-            if country == 'India':
-                base_gdp = 400 + (year - 1990) * 25 + np.random.normal(0, 20)
-            elif country == 'China':
-                base_gdp = 350 + (year - 1990) * 35 + np.random.normal(0, 25)
-            elif country == 'United States':
-                base_gdp = 25000 + (year - 1990) * 800 + np.random.normal(0, 500)
-            elif country == 'Russia':
-                base_gdp = 3000 + (year - 1990) * 150 + np.random.normal(0, 100)
-            elif country == 'Japan':
-                base_gdp = 28000 + (year - 1990) * 400 + np.random.normal(0, 300)
-            elif country == 'Germany':
-                base_gdp = 22000 + (year - 1990) * 500 + np.random.normal(0, 400)
-            else:
-                base_gdp = np.random.uniform(8000, 20000) + (year - 1990) * np.random.uniform(200, 600)
-            
-            gdp_data.append({
-                'country': country,
-                'year': year,
-                'value': max(100, base_gdp)
-            })
-    
-    # Generate Energy data
-    energy_data = []
-    for year in range(1990, 2015):
-        for country in countries:
-            if country == 'India':
-                base_energy = 400 + (year - 1990) * 15 + np.random.normal(0, 30)
-            elif country == 'China':
-                base_energy = 800 + (year - 1990) * 45 + np.random.normal(0, 50)
-            elif country == 'United States':
-                base_energy = 12000 + (year - 1990) * 100 + np.random.normal(0, 200)
-            elif country == 'Russia':
-                base_energy = 6000 + (year - 1990) * 80 + np.random.normal(0, 150)
-            elif country == 'Japan':
-                base_energy = 7500 + (year - 1990) * 120 + np.random.normal(0, 180)
-            elif country == 'Germany':
-                base_energy = 6500 + (year - 1990) * 90 + np.random.normal(0, 160)
-            else:
-                base_energy = np.random.uniform(2000, 8000) + (year - 1990) * np.random.uniform(50, 150)
-            
-            energy_data.append({
-                'country': country,
-                'year': year,
-                'value': max(100, base_energy)
-            })
-    
-    return pd.DataFrame(gdp_data), pd.DataFrame(energy_data)
-
-df_gdp, df_energy = generate_comparison_data()
-
-# Create the multi-metric comparison - now uses selected_country instead of hardcoded India
-metrics_data = [
-    ('CO2 Emissions (tonnes)', df_emissions[df_emissions['year'] >= 1990]),
-    ('Energy Use (kWh per person)', df_energy),
-    ('GDP per capita (USD)', df_gdp)
-]
-
-# Create subplots
-fig_comparison = make_subplots(
-    rows=3, cols=2,
-    subplot_titles=[
-        'CO2 Emissions - Rest of World', f'CO2 Emissions - {selected_country}',
-        'Energy Use - Rest of World', f'Energy Use - {selected_country}', 
-        'GDP per capita - Rest of World', f'GDP per capita - {selected_country}'
-    ],
-    vertical_spacing=0.08,
-    horizontal_spacing=0.1
-)
-
-for i, (metric_name, df_metric) in enumerate(metrics_data):
-    row = i + 1
-    
-    # Filter data for the selected year range
-    df_filtered = df_metric[
-        (df_metric['year'] >= year_range[0]) & 
-        (df_metric['year'] <= year_range[1])
-    ]
-    
-    # Countries excluding selected country
-    countries_excl_selected = [c for c in df_filtered['country'].unique() if c != selected_country]
-    
-    # Calculate y-axis limits for consistency
-    valid_vals = df_filtered['value'].dropna()
-    ymin, ymax = valid_vals.min() * 0.9, valid_vals.max() * 1.1
-    
-    # Plot other countries (left column)
-    for country in countries_excl_selected:
-        df_country = df_filtered[df_filtered['country'] == country]
-        fig_comparison.add_trace(
-            go.Scatter(
-                x=df_country['year'],
-                y=df_country['value'],
-                mode='lines',
-                name=country,
-                line=dict(color='rgba(0,0,0,0.3)', width=2),
-                showlegend=False
-            ),
-            row=row, col=1
-        )
-    
-    # Plot selected country (right column)
-    df_selected = df_filtered[df_filtered['country'] == selected_country]
-    if not df_selected.empty:
-        fig_comparison.add_trace(
-            go.Scatter(
-                x=df_selected['year'],
-                y=df_selected['value'],
-                mode='lines+markers',
-                name=selected_country,
-                line=dict(color='#dc2626', width=3),
-                marker=dict(size=6),
-                showlegend=False
-            ),
-            row=row, col=2
-        )
-    
-    # Set consistent y-axis ranges for both columns
-    fig_comparison.update_yaxes(range=[ymin, ymax], row=row, col=1)
-    fig_comparison.update_yaxes(range=[ymin, ymax], row=row, col=2)
-
-# Update layout
-fig_comparison.update_layout(
-    height=800,
-    title_text=f"Distribution of Indicators: {selected_country} vs Rest of World",
-    title_x=0.5,
-    plot_bgcolor='white',
-    paper_bgcolor='white',
-    font=dict(color='black'),
-    title_font=dict(color='black')
-)
-
-# Update x-axis labels for bottom row
-fig_comparison.update_xaxes(title_text="Year", row=3, col=1, title_font=dict(color='black'))
-fig_comparison.update_xaxes(title_text="Year", row=3, col=2, title_font=dict(color='black'))
-
-# Update y-axis labels
-fig_comparison.update_yaxes(title_text="CO2 Emissions", row=1, col=1, title_font=dict(color='black'))
-fig_comparison.update_yaxes(title_text="Energy Use", row=2, col=1, title_font=dict(color='black'))
-fig_comparison.update_yaxes(title_text="GDP per capita", row=3, col=1, title_font=dict(color='black'))
-
-st.plotly_chart(fig_comparison, use_container_width=True)
 
 # Code example - FIXED
 st.subheader("💻 Sample Analysis Code")
