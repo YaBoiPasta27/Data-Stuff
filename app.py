@@ -242,7 +242,7 @@ current_year = st.sidebar.slider("Current Year", 1980, 2014, 2000)
 
 selected_metrics = st.sidebar.multiselect(
     "Select Metrics",
-    options=['CO2', 'Temperature', 'GDP', 'Population'],
+    options=['CO2', 'Temperature'],
     default=['CO2', 'Temperature']
 )
 # Main content area
