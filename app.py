@@ -122,6 +122,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Data generation functions
 @st.cache_data
 def generate_emissions_data():
     """Generate CO2 emissions data for multiple countries"""
@@ -223,6 +224,13 @@ selected_country = st.sidebar.selectbox(
     index=0
 )
 
+# Metrics selection
+selected_metrics = st.sidebar.multiselect(
+    "Select Metrics",
+    options=['CO2', 'Temperature', 'GDP', 'Population'],
+    default=['CO2', 'Temperature']
+)
+
 # Log scale toggle
 show_log_scale = st.sidebar.checkbox("Use Log Scale")
 
@@ -235,7 +243,15 @@ year_range = st.sidebar.slider(
     step=1
 )
 
+# Animation controls
+st.sidebar.subheader("🎬 Animation Controls")
+if st.sidebar.button("Play Animation"):
+    st.sidebar.info("Animation would cycle through years here")
 
+current_year = st.sidebar.slider("Current Year", 1980, 2014, 2000)
+
+# Main content area
+# Metrics row - FIXED with better visibility
 st.subheader("📊 Key Metrics Overview")
 
 col1, col2, col3, col4 = st.columns(4)
@@ -243,9 +259,9 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.markdown("""
     <div class="metric-card">
-        <h3>Avg Global Temperature</h3>
-        <h2>15°C</h2>
-        <p class="metric-increase">+0.07°C</p>
+        <h3>Avg Temperature</h3>
+        <h2>26.8°C</h2>
+        <p class="metric-increase">▲ 1.2°C</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -253,7 +269,8 @@ with col2:
     st.markdown("""
     <div class="metric-card">
         <h3>CO2 Emissions</h3>
-        <h2>37.4B tonnes</h2>
+        <h2>2.1M tonnes</h2>
+        <p class="metric-increase">▲ 15.3%</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -261,7 +278,8 @@ with col3:
     st.markdown("""
     <div class="metric-card">
         <h3>Growth Rate</h3>
-        <h2>1.1%</h2>
+        <h2>4.2%</h2>
+        <p class="metric-decrease">▼ 0.8%</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -269,7 +287,7 @@ with col4:
     st.markdown("""
     <div class="metric-card">
         <h3>Countries</h3>
-        <h2>197</h2>
+        <h2>195</h2>
         <p class="metric-neutral">—</p>
     </div>
     """, unsafe_allow_html=True)
@@ -322,9 +340,6 @@ fig_emissions.update_layout(
 )
 
 st.plotly_chart(fig_emissions, use_container_width=True)
-
-# Nation-specific analysis
-st.subheader(f"🏛️ {selected_country}-Specific Analysis")
 
 # Temperature correlation analysis
 if 'CO2' in selected_metrics and 'Temperature' in selected_metrics:
@@ -521,6 +536,9 @@ with col2:
     )
 
     st.plotly_chart(fig_energy_trend, use_container_width=True)
+
+# Nation-specific analysis
+st.subheader(f"🏛️ {selected_country}-Specific Analysis")
 
 @st.cache_data
 def generate_comparison_data():
