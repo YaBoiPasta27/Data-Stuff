@@ -260,7 +260,7 @@ with col1:
     st.markdown("""
     <div class="metric-card">
         <h3>Avg Temperature</h3>
-        <h2>26.8°C</h2>
+        <h2>15°C</h2>
         <p class="metric-increase">▲ 1.2°C</p>
     </div>
     """, unsafe_allow_html=True)
@@ -268,18 +268,16 @@ with col1:
 with col2:
     st.markdown("""
     <div class="metric-card">
-        <h3>CO2 Emissions</h3>
-        <h2>2.1M tonnes</h2>
-        <p class="metric-increase">▲ 15.3%</p>
+        <h3>Global CO2 Emissions in 2024</h3>
+        <h2>34.7M tonnes</h2>
     </div>
     """, unsafe_allow_html=True)
 
 with col3:
     st.markdown("""
     <div class="metric-card">
-        <h3>Growth Rate</h3>
-        <h2>4.2%</h2>
-        <p class="metric-decrease">▼ 0.8%</p>
+        <h3>CO2 Emissions Growth Rate</h3>
+        <h2>+1.1%</h2>
     </div>
     """, unsafe_allow_html=True)
 
@@ -287,7 +285,7 @@ with col4:
     st.markdown("""
     <div class="metric-card">
         <h3>Countries</h3>
-        <h2>195</h2>
+        <h2>197</h2>
         <p class="metric-neutral">—</p>
     </div>
     """, unsafe_allow_html=True)
@@ -714,34 +712,11 @@ st.plotly_chart(fig)
 </div>
 """, unsafe_allow_html=True)
 
-# Export section
-st.subheader("📤 Export Results")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    if st.button("📊 Download CSV", use_container_width=True):
-        csv = df_emissions.to_csv(index=False)
-        st.download_button(
-            label="Download Emissions Data",
-            data=csv,
-            file_name="co2_emissions_data.csv",
-            mime="text/csv"
-        )
-
-with col2:
-    if st.button("📈 Export Charts", use_container_width=True):
-        st.info("Chart export functionality would be implemented here")
-
-with col3:
-    if st.button("📋 Generate Report", use_container_width=True):
-        st.info("Report generation functionality would be implemented here")
-
 # Footer
 st.markdown("---")
 st.markdown(
     "<div style='text-align: center; color: #6b7280; padding: 1rem; font-weight: 500;'>"
-    "🎓 ENVECON 105: Data Tools for Sustainability • Streamlit Dashboard"
+    "🎓 ENVECON 105: Data Tools for Sustainability • Streamlit Dashboard By Derek Chang"
     "</div>", 
     unsafe_allow_html=True
 )
@@ -758,7 +733,7 @@ st.sidebar.info(
 
 st.sidebar.subheader("📊 Data Sources")
 st.sidebar.caption(
-    "Simulated data based on real-world patterns for "
-    "educational purposes. In production, this would "
-    "connect to live environmental databases."
+    "CO2 - https://www.gapminder.org/data/. - CO2 emission per person\nGDP - https://data.worldbank.org/indicator/NY.GDP.PCAP.KD.ZG\n
+Energy Use - https://data.worldbank.org/indicator/EG.USE.PCAP.KG.OE\n
+Temperatures - https://climateknowledgeportal.worldbank.org/"
 )
