@@ -366,8 +366,8 @@ else:
 with col1:
     st.markdown(f"""
     <div class="metric-card">
-        <h3>Avg Temperature</h3>
-        <h2>{avg_temp:.1f}°C</h2>
+        <h3 style="color: #000000;>Avg Temperature</h3>
+        <h2 style="color: #000000;>{avg_temp:.1f}°C</h2>
         <p style="color: #000000;">▲ {temp_change:.1f}°C</p>
     </div>
     """, unsafe_allow_html=True)
@@ -375,8 +375,8 @@ with col1:
 with col2:
     st.markdown(f"""
     <div class="metric-card">
-        <h3>CO2 Emissions</h3>
-        <h2>{total_emissions:.1f}M tonnes</h2>
+        <h3 style="color: #000000;>CO2 Emissions</h3>
+        <h2 style="color: #000000;>{total_emissions:.1f}M tonnes</h2>
         <p style="color: #000000;">▲ 15.3%</p>
     </div>
     """, unsafe_allow_html=True)
@@ -393,8 +393,8 @@ with col3:
     
     st.markdown(f"""
     <div class="metric-card">
-        <h3>Avg Growth Rate</h3>
-        <h2>{avg_growth:.1f}%</h2>
+        <h3 style="color: #000000;>Avg Growth Rate</h3>
+        <h2 style="color: #000000;>{avg_growth:.1f}%</h2>
         <p style="color: #000000;">▼ 0.8%</p>
     </div>
     """, unsafe_allow_html=True)
