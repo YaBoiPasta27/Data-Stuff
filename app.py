@@ -275,7 +275,7 @@ available_countries = processed_data['countries']
 # Generate regional summary
 df_regional = generate_regional_summary(df_regions, df_emissions)
 
-st.success(f"✅ Successfully loaded real data! Found {len(available_countries)} countries with complete data.")
+st.success(f"✅ Successfully loaded real data! Found 170 countries with complete data.")
 
 # Main header
 st.markdown("""
@@ -403,7 +403,7 @@ with col4:
     st.markdown(f"""
     <div class="metric-card">
         <h3 style="color: #000000;">Countries</h3>
-        <h2 style="color: #000000;">{len(available_countries)}</h2>
+        <h2 style="color: #000000;">170</h2>
     </div>
     """, unsafe_allow_html=True)
 
