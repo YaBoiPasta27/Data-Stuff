@@ -719,7 +719,7 @@ with tab1:
             total_emissions_latest = df_emissions[df_emissions['year'] == latest_year_co2]['value'].sum()
             st.metric(
                 "Global Emissions (Latest Year)",
-                f"{total_emissions_latest} tonnes",
+                f"{total_emissions_latest/1e3:.2f}K tonnes",
                 help=f"Total global CO2 emissions in {latest_year_co2}"
             )
         
@@ -727,7 +727,7 @@ with tab1:
             avg_emissions = df_emissions['value'].mean()
             st.metric(
                 "Average Country Emissions",
-                f"{avg_emissions} tonnes",
+                f"{avg_emissions/1e6:.1f}M tonnes",
                 help="Average emissions per country across all years"
             )
         
@@ -735,7 +735,7 @@ with tab1:
             max_emitter = df_emissions.loc[df_emissions['value'].idxmax()]
             st.metric(
                 "Highest Single Emission",
-                f"{max_emitter['value']} tonnes",
+                f"{max_emitter['value']/1e3:.2f}K tonnes",
                 help=f"{max_emitter['country']} in {int(max_emitter['year'])}"
             )
         
@@ -756,11 +756,12 @@ with tab1:
             with col1:
                 st.write(f"**{i}. {row['country']}**")
             with col2:
-                st.write(f"{row['value']} tonnes")
+                st.write(f"{row['value']/1e3:.2f}K tonnes")
         
         # Growth analysis
         st.markdown("#### 📈 Emissions Growth Analysis")
         
+        # Calculate growth rates for countries with data in both first and last years
         growth_analysis = []
         for country in df_emissions['country'].unique():
             country_data = df_emissions[df_emissions['country'] == country].sort_values('year')
@@ -792,7 +793,7 @@ with tab1:
                 st.metric(
                     "Fastest Growing Emitter",
                     f"{fastest_growing['country']}",
-                    f"+{fastest_growing['annual_growth']}% annually",
+                    f"+{fastest_growing['annual_growth']:.1f}% annually",
                     help=f"From {int(fastest_growing['first_year'])} to {int(fastest_growing['last_year'])}"
                 )
             
@@ -801,7 +802,7 @@ with tab1:
                 st.metric(
                     "Fastest Declining Emitter",
                     f"{fastest_declining['country']}",
-                    f"{fastest_declining['annual_growth']}% annually",
+                    f"{fastest_declining['annual_growth']:.1f}% annually",
                     help=f"From {int(fastest_declining['first_year'])} to {int(fastest_declining['last_year'])}"
                 )
 
@@ -1035,7 +1036,6 @@ with tab3:
                     f"{least_efficient['country']}",
                     f"+{least_efficient['growth_rate']:.1f}% change",
                     help="Country with largest increase in energy use per capita"
-                )
 
 # Export section
 st.subheader("Export Real Data")
