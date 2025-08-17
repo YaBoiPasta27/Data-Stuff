@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import requests
 import time
+import webbrowser
 
 # Page configuration
 st.set_page_config(
@@ -326,6 +327,19 @@ year_range = st.sidebar.slider(
 st.sidebar.subheader("Animation Controls")
 if st.sidebar.button("Play Animation"):
     st.sidebar.info("Animation would cycle through years here")
+
+# External link controls
+st.sidebar.subheader("External Resources")
+if st.sidebar.button("Open Dashboard in Browser"):
+    try:
+        webbrowser.open("https://data-stuff-ehbdd5uoytzqfw6rcrxdn2.streamlit.app/")
+        st.sidebar.success("✅ Opening dashboard in your default browser...")
+    except Exception as e:
+        st.sidebar.error(f"❌ Could not open browser: {str(e)}")
+        st.sidebar.markdown(
+            "**Manual Link:** [Open Dashboard](https://data-stuff-ehbdd5uoytzqfw6rcrxdn2.streamlit.app/)",
+            unsafe_allow_html=True
+        )
 
 current_year = st.sidebar.slider("Current Year", min_year, max_year, max_year-10)
 
@@ -683,6 +697,346 @@ with col3:
         f"{len(df_eupp):,}", 
         help="Total number of country-year observations for energy use per person"
     )
+
+# Detailed Statistics Section
+st.subheader("📊 Detailed Statistics for Major Data Metrics")
+
+# Create tabs for different metric statistics
+tab1, tab2, tab3 = st.tabs(["🏭 CO2 Emissions Statistics", "📈 GDP Growth Statistics", "⚡ Energy Use (EUPP) Statistics"])
+
+with tab1:
+    st.markdown("### CO2 Emissions Analysis")
+    
+    if not df_emissions.empty:
+        # Calculate comprehensive CO2 statistics
+        latest_year_co2 = df_emissions['year'].max()
+        earliest_year_co2 = df_emissions['year'].min()
+        
+        # Global statistics
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            total_emissions_latest = df_emissions[df_emissions['year'] == latest_year_co2]['value'].sum()
+            st.metric(
+                "Global Emissions (Latest Year)",
+                f"{total_emissions_latest/1e9:.2f}B tonnes",
+                help=f"Total global CO2 emissions in {latest_year_co2}"
+            )
+        
+        with col2:
+            avg_emissions = df_emissions['value'].mean()
+            st.metric(
+                "Average Country Emissions",
+                f"{avg_emissions/1e6:.1f}M tonnes",
+                help="Average emissions per country across all years"
+            )
+        
+        with col3:
+            max_emitter = df_emissions.loc[df_emissions['value'].idxmax()]
+            st.metric(
+                "Highest Single Emission",
+                f"{max_emitter['value']/1e9:.2f}B tonnes",
+                help=f"{max_emitter['country']} in {int(max_emitter['year'])}"
+            )
+        
+        with col4:
+            num_countries_co2 = df_emissions['country'].nunique()
+            st.metric(
+                "Countries with Data",
+                f"{num_countries_co2}",
+                help="Number of countries with CO2 emissions data"
+            )
+        
+        # Top and bottom emitters
+        st.markdown("#### 🔝 Top 5 Emitters (Latest Year)")
+        top_emitters_latest = df_emissions[df_emissions['year'] == latest_year_co2].nlargest(5, 'value')
+        
+        for i, (_, row) in enumerate(top_emitters_latest.iterrows(), 1):
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.write(f"**{i}. {row['country']}**")
+            with col2:
+                st.write(f"{row['value']/1e9:.2f}B tonnes")
+        
+        # Growth analysis
+        st.markdown("#### 📈 Emissions Growth Analysis")
+        
+        # Calculate growth rates for countries with data in both first and last years
+        growth_analysis = []
+        for country in df_emissions['country'].unique():
+            country_data = df_emissions[df_emissions['country'] == country].sort_values('year')
+            if len(country_data) >= 2:
+                first_val = country_data.iloc[0]['value']
+                last_val = country_data.iloc[-1]['value']
+                first_year = country_data.iloc[0]['year']
+                last_year = country_data.iloc[-1]['year']
+                
+                if first_val > 0:
+                    total_growth = ((last_val - first_val) / first_val) * 100
+                    annual_growth = (((last_val / first_val) ** (1 / (last_year - first_year))) - 1) * 100
+                    
+                    growth_analysis.append({
+                        'country': country,
+                        'total_growth': total_growth,
+                        'annual_growth': annual_growth,
+                        'first_year': first_year,
+                        'last_year': last_year
+                    })
+        
+        if growth_analysis:
+            growth_df = pd.DataFrame(growth_analysis)
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                fastest_growing = growth_df.loc[growth_df['annual_growth'].idxmax()]
+                st.metric(
+                    "Fastest Growing Emitter",
+                    f"{fastest_growing['country']}",
+                    f"+{fastest_growing['annual_growth']:.1f}% annually",
+                    help=f"From {int(fastest_growing['first_year'])} to {int(fastest_growing['last_year'])}"
+                )
+            
+            with col2:
+                fastest_declining = growth_df.loc[growth_df['annual_growth'].idxmin()]
+                st.metric(
+                    "Fastest Declining Emitter",
+                    f"{fastest_declining['country']}",
+                    f"{fastest_declining['annual_growth']:.1f}% annually",
+                    help=f"From {int(fastest_declining['first_year'])} to {int(fastest_declining['last_year'])}"
+                )
+
+with tab2:
+    st.markdown("### GDP Growth Rate Analysis")
+    
+    if not df_gdp.empty:
+        # Calculate comprehensive GDP statistics
+        latest_year_gdp = df_gdp['year'].max()
+        
+        # Global GDP statistics
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            avg_global_growth = df_gdp[df_gdp['year'] == latest_year_gdp]['value'].mean() * 100
+            st.metric(
+                "Global Avg Growth (Latest)",
+                f"{avg_global_growth:.1f}%",
+                help=f"Average GDP growth across countries in {latest_year_gdp}"
+            )
+        
+        with col2:
+            highest_growth = df_gdp['value'].max() * 100
+            st.metric(
+                "Highest Growth Rate",
+                f"{highest_growth:.1f}%",
+                help="Highest single-year growth rate recorded"
+            )
+        
+        with col3:
+            lowest_growth = df_gdp['value'].min() * 100
+            st.metric(
+                "Lowest Growth Rate",
+                f"{lowest_growth:.1f}%",
+                help="Lowest single-year growth rate (recession)"
+            )
+        
+        with col4:
+            gdp_volatility = df_gdp['value'].std() * 100
+            st.metric(
+                "Growth Volatility",
+                f"{gdp_volatility:.1f}%",
+                help="Standard deviation of all growth rates"
+            )
+        
+        # Growth rate distribution
+        st.markdown("#### 📊 Growth Rate Distribution (Latest Year)")
+        latest_gdp_data = df_gdp[df_gdp['year'] == latest_year_gdp]
+        
+        positive_growth = len(latest_gdp_data[latest_gdp_data['value'] > 0])
+        negative_growth = len(latest_gdp_data[latest_gdp_data['value'] < 0])
+        total_countries = len(latest_gdp_data)
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric(
+                "Positive Growth Countries",
+                f"{positive_growth}",
+                f"{(positive_growth/total_countries)*100:.1f}% of total"
+            )
+        
+        with col2:
+            st.metric(
+                "Negative Growth Countries",
+                f"{negative_growth}",
+                f"{(negative_growth/total_countries)*100:.1f}% of total"
+            )
+        
+        with col3:
+            stable_growth = total_countries - positive_growth - negative_growth
+            st.metric(
+                "Stable Countries",
+                f"{stable_growth}",
+                "Near-zero growth"
+            )
+        
+        # Top performers
+        st.markdown("#### 🏆 Economic Performance (Latest Year)")
+        top_performers = latest_gdp_data.nlargest(5, 'value')
+        bottom_performers = latest_gdp_data.nsmallest(5, 'value')
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**🚀 Top Growth Rates:**")
+            for _, row in top_performers.iterrows():
+                st.write(f"• **{row['country']}**: {row['value']*100:.1f}%")
+        
+        with col2:
+            st.markdown("**📉 Lowest Growth Rates:**")
+            for _, row in bottom_performers.iterrows():
+                st.write(f"• **{row['country']}**: {row['value']*100:.1f}%")
+
+with tab3:
+    st.markdown("### Energy Use Per Person (EUPP) Analysis")
+    
+    if not df_eupp.empty:
+        # Calculate comprehensive EUPP statistics
+        latest_year_eupp = df_eupp['year'].max()
+        
+        # Global EUPP statistics
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            global_avg_eupp = df_eupp[df_eupp['year'] == latest_year_eupp]['value'].mean()
+            st.metric(
+                "Global Avg EUPP (Latest)",
+                f"{global_avg_eupp:.0f} GJ/capita",
+                help=f"Average energy use per person in {latest_year_eupp}"
+            )
+        
+        with col2:
+            highest_eupp = df_eupp['value'].max()
+            st.metric(
+                "Highest EUPP",
+                f"{highest_eupp:.0f} GJ/capita",
+                help="Highest energy use per person recorded"
+            )
+        
+        with col3:
+            lowest_eupp = df_eupp[df_eupp['value'] > 0]['value'].min()
+            st.metric(
+                "Lowest EUPP",
+                f"{lowest_eupp:.0f} GJ/capita",
+                help="Lowest energy use per person recorded"
+            )
+        
+        with col4:
+            eupp_ratio = highest_eupp / lowest_eupp
+            st.metric(
+                "Energy Inequality Ratio",
+                f"{eupp_ratio:.1f}x",
+                help="Ratio between highest and lowest energy users"
+            )
+        
+        # Energy consumption categories
+        st.markdown("#### ⚡ Energy Consumption Categories (Latest Year)")
+        latest_eupp_data = df_eupp[df_eupp['year'] == latest_year_eupp]
+        
+        # Define categories
+        very_high = len(latest_eupp_data[latest_eupp_data['value'] > 200])
+        high = len(latest_eupp_data[(latest_eupp_data['value'] > 100) & (latest_eupp_data['value'] <= 200)])
+        medium = len(latest_eupp_data[(latest_eupp_data['value'] > 50) & (latest_eupp_data['value'] <= 100)])
+        low = len(latest_eupp_data[latest_eupp_data['value'] <= 50])
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric(
+                "Very High Consumers",
+                f"{very_high}",
+                ">200 GJ/capita"
+            )
+        
+        with col2:
+            st.metric(
+                "High Consumers",
+                f"{high}",
+                "100-200 GJ/capita"
+            )
+        
+        with col3:
+            st.metric(
+                "Medium Consumers",
+                f"{medium}",
+                "50-100 GJ/capita"
+            )
+        
+        with col4:
+            st.metric(
+                "Low Consumers",
+                f"{low}",
+                "<50 GJ/capita"
+            )
+        
+        # Top and bottom energy users
+        st.markdown("#### 🔋 Energy Consumption Rankings (Latest Year)")
+        top_consumers = latest_eupp_data.nlargest(5, 'value')
+        bottom_consumers = latest_eupp_data.nsmallest(5, 'value')
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**🔥 Highest Energy Users:**")
+            for _, row in top_consumers.iterrows():
+                st.write(f"• **{row['country']}**: {row['value']:.0f} GJ/capita")
+        
+        with col2:
+            st.markdown("**🌱 Lowest Energy Users:**")
+            for _, row in bottom_consumers.iterrows():
+                st.write(f"• **{row['country']}**: {row['value']:.0f} GJ/capita")
+        
+        # Energy efficiency insights
+        st.markdown("#### 💡 Energy Efficiency Insights")
+        
+        # Calculate energy growth rates
+        energy_growth = []
+        for country in df_eupp['country'].unique():
+            country_data = df_eupp[df_eupp['country'] == country].sort_values('year')
+            if len(country_data) >= 2:
+                first_val = country_data.iloc[0]['value']
+                last_val = country_data.iloc[-1]['value']
+                
+                if first_val > 0:
+                    growth_rate = ((last_val - first_val) / first_val) * 100
+                    energy_growth.append({
+                        'country': country,
+                        'growth_rate': growth_rate,
+                        'absolute_change': last_val - first_val
+                    })
+        
+        if energy_growth:
+            energy_growth_df = pd.DataFrame(energy_growth)
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                most_efficient = energy_growth_df.loc[energy_growth_df['growth_rate'].idxmin()]
+                st.metric(
+                    "Most Improved Efficiency",
+                    f"{most_efficient['country']}",
+                    f"{most_efficient['growth_rate']:.1f}% change",
+                    help="Country with largest reduction in energy use per capita"
+                )
+            
+            with col2:
+                least_efficient = energy_growth_df.loc[energy_growth_df['growth_rate'].idxmax()]
+                st.metric(
+                    "Largest Energy Increase",
+                    f"{least_efficient['country']}",
+                    f"+{least_efficient['growth_rate']:.1f}% change",
+                    help="Country with largest increase in energy use per capita"
+                )
 
 # Export section
 st.subheader("Export Real Data")
