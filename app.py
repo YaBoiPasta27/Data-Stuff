@@ -323,24 +323,6 @@ year_range = st.sidebar.slider(
     step=1
 )
 
-# Animation controls
-st.sidebar.subheader("Animation Controls")
-if st.sidebar.button("Play Animation"):
-    st.sidebar.info("Animation would cycle through years here")
-
-# External link controls
-st.sidebar.subheader("External Resources")
-if st.sidebar.button("Open Dashboard in Browser"):
-    try:
-        webbrowser.open("https://data-stuff-ehbdd5uoytzqfw6rcrxdn2.streamlit.app/")
-        st.sidebar.success("✅ Opening dashboard in your default browser...")
-    except Exception as e:
-        st.sidebar.error(f"❌ Could not open browser: {str(e)}")
-        st.sidebar.markdown(
-            "**Manual Link:** [Open Dashboard](https://data-stuff-ehbdd5uoytzqfw6rcrxdn2.streamlit.app/)",
-            unsafe_allow_html=True
-        )
-
 current_year = st.sidebar.slider("Current Year", min_year, max_year, max_year-10)
 
 # Main content area
