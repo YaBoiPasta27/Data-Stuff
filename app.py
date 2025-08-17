@@ -297,7 +297,7 @@ st.sidebar.header("Interactive Controls")
 selected_country = st.sidebar.selectbox(
     "Select Country",
     options=sorted(available_countries),
-    index=0 if len(available_countries) > 0 else 0
+    index=0 if len(available_countries) > 0 else 0,
     default="India"
 )
 
