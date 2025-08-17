@@ -294,12 +294,21 @@ st.markdown("""
 st.sidebar.header("Interactive Controls")
 
 # Country selection - use available countries from real data
-selected_country = st.sidebar.selectbox(
-    "Select Country",
-    options=sorted(available_countries),
-    index=0 if len(available_countries) > 0 else 0,
-    default="India"
-)
+if len(available_countries) > 0:
+    # Try to set India as default if it's in the list
+    try:
+        default_index = available_countries.index("India")
+    except ValueError:
+        default_index = 0  # If India is not available, use first country
+    
+    selected_country = st.sidebar.selectbox(
+        "Select Country",
+        options=sorted(available_countries),
+        index=default_index
+    )
+else:
+    st.sidebar.error("No countries available in the data")
+    selected_country = "Unknown"
 
 # Metrics selection
 selected_metrics = st.sidebar.multiselect(
