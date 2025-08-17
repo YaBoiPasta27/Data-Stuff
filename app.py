@@ -1036,7 +1036,7 @@ with tab3:
                     f"{least_efficient['country']}",
                     f"+{least_efficient['growth_rate']:.1f}% change",
                     help="Country with largest increase in energy use per capita"
-
+                )
 # Export section
 st.subheader("Export Real Data")
 
