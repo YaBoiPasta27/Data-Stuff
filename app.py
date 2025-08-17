@@ -180,16 +180,17 @@ def process_real_data():
         dfEUPP = year_filter(dfEUPP) 
         dfCO2Total = year_filter(dfCO2Total)
         
-        # Get list of countries that appear in all datasets
-        co2_countries = set(dfCO2Total['country'].unique())
-        gdp_countries = set(dfGDP['country'].unique())
-        eupp_countries = set(dfEUPP['country'].unique())
+        # Get top 10 carbon emitting countries in 2014
+        co2_2014 = dfCO2Total[dfCO2Total['year'] == 2014]
+        if not co2_2014.empty:
+            top_emitters = co2_2014.nlargest(10, 'value')['country'].tolist()
+        else:
+            # Fallback to latest available year
+            latest_year = dfCO2Total['year'].max()
+            co2_latest = dfCO2Total[dfCO2Total['year'] == latest_year]
+            top_emitters = co2_latest.nlargest(10, 'value')['country'].tolist() if not co2_latest.empty else []
         
-        # Find common countries (or use the most comprehensive dataset)
-        common_countries = list(co2_countries.intersection(gdp_countries, eupp_countries))
-        if len(common_countries) < 10:
-            # Use CO2 dataset as primary if intersection is too small
-            common_countries = list(co2_countries)[:20]  # Take top 20 countries with CO2 data
+        common_countries = top_emitters
         
         return {
             'emissions': dfCO2Total,
@@ -653,7 +654,7 @@ fig_regional = px.bar(
     color_continuous_scale='Reds'
 )
 
-fig_regional.update_xaxis(tickangle=45)
+fig_regional.update_layout(xaxis_tickangle=45)
 fig_regional.update_layout(height=400)
 
 st.plotly_chart(fig_regional, use_container_width=True)
