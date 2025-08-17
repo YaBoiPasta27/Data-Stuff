@@ -368,7 +368,7 @@ with col1:
     <div class="metric-card">
         <h3>Avg Temperature</h3>
         <h2>{avg_temp:.1f}°C</h2>
-        <p style="color: #d32f2f;">▲ {temp_change:.1f}°C</p>
+        <p style="color: #000000;">▲ {temp_change:.1f}°C</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -377,7 +377,7 @@ with col2:
     <div class="metric-card">
         <h3>CO2 Emissions</h3>
         <h2>{total_emissions:.1f}M tonnes</h2>
-        <p style="color: #d32f2f;">▲ 15.3%</p>
+        <p style="color: #000000;">▲ 15.3%</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -395,7 +395,7 @@ with col3:
     <div class="metric-card">
         <h3>Avg Growth Rate</h3>
         <h2>{avg_growth:.1f}%</h2>
-        <p style="color: #388e3c;">▼ 0.8%</p>
+        <p style="color: #000000;">▼ 0.8%</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -719,7 +719,7 @@ with tab1:
             total_emissions_latest = df_emissions[df_emissions['year'] == latest_year_co2]['value'].sum()
             st.metric(
                 "Global Emissions (Latest Year)",
-                f"{total_emissions_latest/1e9:.2f}B tonnes",
+                f"{total_emissions_latest} tonnes",
                 help=f"Total global CO2 emissions in {latest_year_co2}"
             )
         
@@ -727,7 +727,7 @@ with tab1:
             avg_emissions = df_emissions['value'].mean()
             st.metric(
                 "Average Country Emissions",
-                f"{avg_emissions/1e6:.1f}M tonnes",
+                f"{avg_emissions} tonnes",
                 help="Average emissions per country across all years"
             )
         
@@ -735,7 +735,7 @@ with tab1:
             max_emitter = df_emissions.loc[df_emissions['value'].idxmax()]
             st.metric(
                 "Highest Single Emission",
-                f"{max_emitter['value']/1e9:.2f}B tonnes",
+                f"{max_emitter['value']} tonnes",
                 help=f"{max_emitter['country']} in {int(max_emitter['year'])}"
             )
         
@@ -756,12 +756,11 @@ with tab1:
             with col1:
                 st.write(f"**{i}. {row['country']}**")
             with col2:
-                st.write(f"{row['value']/1e9:.2f}B tonnes")
+                st.write(f"{row['value']} tonnes")
         
         # Growth analysis
         st.markdown("#### 📈 Emissions Growth Analysis")
         
-        # Calculate growth rates for countries with data in both first and last years
         growth_analysis = []
         for country in df_emissions['country'].unique():
             country_data = df_emissions[df_emissions['country'] == country].sort_values('year')
@@ -793,7 +792,7 @@ with tab1:
                 st.metric(
                     "Fastest Growing Emitter",
                     f"{fastest_growing['country']}",
-                    f"+{fastest_growing['annual_growth']:.1f}% annually",
+                    f"+{fastest_growing['annual_growth']}% annually",
                     help=f"From {int(fastest_growing['first_year'])} to {int(fastest_growing['last_year'])}"
                 )
             
@@ -802,7 +801,7 @@ with tab1:
                 st.metric(
                     "Fastest Declining Emitter",
                     f"{fastest_declining['country']}",
-                    f"{fastest_declining['annual_growth']:.1f}% annually",
+                    f"{fastest_declining['annual_growth']}% annually",
                     help=f"From {int(fastest_declining['first_year'])} to {int(fastest_declining['last_year'])}"
                 )
 
