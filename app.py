@@ -402,8 +402,8 @@ with col3:
 with col4:
     st.markdown(f"""
     <div class="metric-card">
-        <h3>Countries</h3>
-        <h2>{len(available_countries)}</h2>
+        <h3 style="color: #000000;">Countries</h3>
+        <h2 style="color: #000000;">{len(available_countries)}</h2>
     </div>
     """, unsafe_allow_html=True)
 
